@@ -1,0 +1,1 @@
+[Download Spider dataset](https://yale-lily.github.io/spider) and put the `spider` directory in this directory.
