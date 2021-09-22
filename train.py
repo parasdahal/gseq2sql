@@ -1,9 +1,11 @@
-import argparse
 import torch
-import collections
 import numpy as np
 from torch.optim import Adam
+from torch.utils.data.sampler import RandomSampler
 from models.query_encoder.bert import BertEncoder
+from data.dataset import SpiderDataset
+from torch.utils.data import DataLoader, random_split, RandomSampler
+
 
 # fix random seeds for reproducibility
 SEED = 123
@@ -23,10 +25,17 @@ else:
 
 def main():
 
+
     # setup data_loader instances
-    train_data_loader = ...
-    valid_data_loader = ...
-    test_data_loader = ...    
+    dataset = SpiderDataset('spider/train_spider.json')
+    train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
+
+    train_dataloader = DataLoader(train_dataset,
+                        sampler=RandomSampler(train_dataset),
+                        batch_size=32) # TODO change batch size?
+    valid_dataloader = DataLoader(valid_dataset,
+                        sampler=RandomSampler(valid_dataset),
+                        batch_size=32) 
 
     model = BertEncoder()
     model = model.to(device)
@@ -38,7 +47,7 @@ def main():
     for epoch in range(epochs):
         model.train()
 
-        for i, batch in enumerate(train_data_loader):
+        for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels = batch
             input_ids.to(device); attention_masks.to(device); labels.to(device)
 
@@ -50,13 +59,13 @@ def main():
             loss.backward()
             optimizer.step()
 
-        val_loss = evaluation(model, valid_data_loader)
+        val_loss = evaluation(model, valid_dataloader)
 
 
-def evaluation(model, valid_data_loader):
+def evaluation(model, valid_dataloader):
     model.eval()
 
-    for batch in valid_data_loader:
+    for batch in valid_dataloader:
         input_ids, attention_masks, labels = batch
         input_ids.to(device); attention_masks.to(device); labels.to(device)
 
