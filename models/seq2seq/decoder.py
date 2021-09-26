@@ -1,9 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 class Attention(nn.module):
   def __init__(self, hidden_size, max_length):
     super(Decoder, self).__init__()
@@ -23,6 +20,7 @@ class Attention(nn.module):
 class Decoder(nn.Module):
   def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=500):
     super(Decoder, self).__init__()
+    self.hidden_size = hidden_size
     self.embedding = nn.Embedding(output_size, hidden_size)
     self.dropout = nn.Dropout(dropout_p)
     self.attention = Attention(hidden_size, max_length)
@@ -41,5 +39,7 @@ class Decoder(nn.Module):
     output = F.log_softmax(self.out(output[0]), dim=1)
     return output, hidden, attn_weights
 
-  def init_hidden(self):
+  def init_hidden(self, device):
+    if not device:
+      device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     return torch.zeros(1, 1, self.hidden_size, device=device)
