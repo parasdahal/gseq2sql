@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 class Attention(nn.module):
   def __init__(self, hidden_size, max_length):
     super(Decoder, self).__init__()
@@ -18,26 +19,32 @@ class Attention(nn.module):
     return output, attn_weights
     
 class Decoder(nn.Module):
-  def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=500):
+  def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=500,
+               use_attention=True, bidirectional=True):
     super(Decoder, self).__init__()
     self.hidden_size = hidden_size
+    self.use_attention = use_attention
     self.embedding = nn.Embedding(output_size, hidden_size)
     self.dropout = nn.Dropout(dropout_p)
-    self.attention = Attention(hidden_size, max_length)
-    self.rnn = nn.LSTM(hidden_size, hidden_size, bidirectional=True)
+    if use_attention:
+      self.attention = Attention(hidden_size, max_length)
+    self.rnn = nn.LSTM(hidden_size, hidden_size, bidirectional=bidirectional)
     self.out = nn.Linear(hidden_size, output_size)
 
   def forward(self, input, hidden, encoder_outputs):
     embedded = self.embedding(input).view(1, 1, -1)
     output = self.dropout(embedded)
     
-    output, attn_weights = self.attention(output, hidden, encoder_outputs);
+    if self.use_attention:
+      output, attn_weights = self.attention(output, hidden, encoder_outputs);
     
     output = F.relu(output)
     output, hidden = self.rnn(output, hidden)
 
     output = F.log_softmax(self.out(output[0]), dim=1)
-    return output, hidden, attn_weights
+    
+    if self.use_attention : return output, hidden, attn_weights
+    return output, hidden
 
   def init_hidden(self, device):
     if not device:
