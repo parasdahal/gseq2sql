@@ -69,7 +69,8 @@ def train(args):
 
         for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels = batch
-            input_ids.to(device); attention_masks.to(device);labels.to(device)
+            input_ids, attention_masks, labels = input_ids.to(device), \
+                attention_masks.to(device), labels.to(device)
             
             train_loss, attetion_weights = train_step(input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
