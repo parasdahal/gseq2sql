@@ -5,13 +5,17 @@ def parse_args():
       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   # Model hyperparameters
   parser.add_argument('--enc_hidden_dim',
-                      default=1028,
+                      default=768,
                       type=int,
                       help='Size of hidden state of encoder model')
   parser.add_argument('--dec_hidden_dim',
                       default=512,
                       type=int,
                       help='Size of hidden state of decoder model')
+  parser.add_argument('--vocab_size',
+                      default=10000,
+                      type=int,
+                      help='Size of the vocabulary')
   # Optimizer hyperparameters
   parser.add_argument('--lr',
                       default=0.001,
