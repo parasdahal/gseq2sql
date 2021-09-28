@@ -77,7 +77,7 @@ def train():
     loss_fn = nn.NLLLoss()
 
     for epoch in range(epochs):
-        model.train()
+        bert.train(); decoder.train()
 
         for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels = batch
