@@ -8,7 +8,7 @@ class SpiderDataset(Dataset):
 
   def __init__(self, json_file):
     questions = []
-    self.queries = []
+    queries = []
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -16,11 +16,13 @@ class SpiderDataset(Dataset):
       data = json.load(f)
       for item in data:
         questions.append(item['question'])
-        self.queries.append(item['query'])
+        queries.append(item['query'])
 
     tokenized_questions = tokenizer(questions, truncation=True, padding=True, add_special_tokens=True)
+    tokenized_queries = tokenizer(queries, truncation=True, padding=True, add_special_tokens=True)
     self.input_ids = tokenized_questions['input_ids']
     self.att_mask = tokenized_questions['attention_mask']
+    self.queries = tokenized_queries['input_ids']
 
   def __len__(self):
     return len(self.input_ids)
