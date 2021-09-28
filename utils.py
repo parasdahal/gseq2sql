@@ -13,7 +13,7 @@ def parse_args():
                       type=int,
                       help='Size of hidden state of decoder model')
   parser.add_argument('--vocab_size',
-                      default=10000,
+                      default=30522,
                       type=int,
                       help='Size of the vocabulary')
   # Optimizer hyperparameters
