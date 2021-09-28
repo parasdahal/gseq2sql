@@ -35,7 +35,7 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     target_length = target.size(0)
     
     bert_outputs = bert(input, attention_masks) # Generate bert outputs here...
-    decoder_input = torch.tensor([[SOS_token]], device=device)
+    decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
     decoder_hidden = bert_outputs
     loss = 0
     # Generate token and compute loss in each timestep.
@@ -44,7 +44,7 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
             decoder_input, decoder_hidden, bert_outputs)
         decoder_input = decoder_output
         loss += loss_fn(decoder_output, target[i])
-        if decoder_input.item() == EOS_token:
+        if decoder_input.item() == EOS_TOKEN:
             break
     loss.backward()
     
