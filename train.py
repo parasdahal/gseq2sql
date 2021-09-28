@@ -53,6 +53,8 @@ def train(args):
                         sampler=RandomSampler(valid_dataset),
                         batch_size=args.batch_size) 
 
+    args.vocab_size = train_dataset.get_vocab_size()
+
     bert = BertEncoder()
     decoder = Decoder(hidden_size=args.dec_hidden_dim, output_size=args.vocab_size)
     
