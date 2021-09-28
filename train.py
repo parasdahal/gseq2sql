@@ -42,8 +42,8 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
 def train(args):
 
     # Setup data_loader instances.
-    train_dataset = SpiderDataset('spider/train_spider.json')
-    valid_dataset = SpiderDataset('spider/dev.json')
+    train_dataset = SpiderDataset('data/spider/train_spider.json')
+    valid_dataset = SpiderDataset('data/spider/dev.json')
     # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
 
     train_dataloader = DataLoader(train_dataset,
@@ -65,6 +65,7 @@ def train(args):
     loss_fn = nn.NLLLoss()
 
     for epoch in range(args.epochs):
+        print('Training epoch: ', epoch)
         bert.train(); decoder.train()
 
         for i, batch in enumerate(train_dataloader):
@@ -73,7 +74,7 @@ def train(args):
             
             train_loss, attetion_weights = train_step(input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
-            
+            print('Batch loss: ', train_loss)
 
         # val_loss = evaluation(model, valid_dataloader)
 
@@ -106,7 +107,7 @@ if __name__ == '__main__':
 
     if torch.cuda.is_available():       
         device = torch.device("cuda")
-        print(f'There are {torch.cuda.device_count()} GPU(s) available.')
+        print('There are {torch.cuda.device_count()} GPU(s) available.')
         print('Device name:', torch.cuda.get_device_name(0))
     else:
         print('No GPU available, using the CPU instead.')
