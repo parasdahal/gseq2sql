@@ -7,6 +7,9 @@ from data.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
 from models.seq2seq import decoder
 
+SOS_TOKEN = 101
+EOS_TOKEN = 102
+
 # fix random seeds for reproducibility
 SEED = 123
 torch.manual_seed(SEED)
