@@ -42,8 +42,8 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
 def train(args):
 
     # Setup data_loader instances.
-    train_dataset = SpiderDataset('spider/train_spider.json')
-    valid_dataset = SpiderDataset('spider/dev.json')
+    train_dataset = SpiderDataset('data/spider/train_spider.json')
+    valid_dataset = SpiderDataset('data/spider/dev.json')
     # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
 
     train_dataloader = DataLoader(train_dataset,
@@ -59,8 +59,8 @@ def train(args):
     bert = bert.to(device)
     decoder = decoder.to(device)
 
-    bert_optimizer = Adam(bert.params(),lr=args.lr)
-    decoder_optimizer = Adam(decoder.params(),lr=args.lr)
+    bert_optimizer = Adam(bert.parameters(),lr=args.lr)
+    decoder_optimizer = Adam(decoder.parameters(),lr=args.lr)
     
     loss_fn = nn.NLLLoss()
 
