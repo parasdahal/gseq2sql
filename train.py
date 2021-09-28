@@ -7,25 +7,10 @@ from models.query_encoder.bert import BertEncoder
 from data.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
 from models.seq2seq.decoder import Decoder
+from utils import parse_args
 
 SOS_TOKEN = 101
 EOS_TOKEN = 102
-
-# fix random seeds for reproducibility
-SEED = 123
-torch.manual_seed(SEED)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-np.random.seed(SEED)
-
-if torch.cuda.is_available():       
-    device = torch.device("cuda")
-    print(f'There are {torch.cuda.device_count()} GPU(s) available.')
-    print('Device name:', torch.cuda.get_device_name(0))
-else:
-    print('No GPU available, using the CPU instead.')
-    device = torch.device("cpu")
-
 
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
                bert_optimizer, decoder_optimizer):
@@ -54,33 +39,32 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     return loss.item() / target_length, attetion_weights
         
     
-def train(epochs=50):
+def train(args):
 
-
-    # setup data_loader instances
+    # Setup data_loader instances.
     train_dataset = SpiderDataset('spider/train_spider.json')
     valid_dataset = SpiderDataset('spider/dev.json')
     # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
 
     train_dataloader = DataLoader(train_dataset,
                         sampler=RandomSampler(train_dataset),
-                        batch_size=32) # TODO change batch size?
+                        batch_size=args.batch_size) # TODO change batch size?
     valid_dataloader = DataLoader(valid_dataset,
                         sampler=RandomSampler(valid_dataset),
-                        batch_size=32) 
+                        batch_size=args.batch_size) 
 
     bert = BertEncoder()
-    decoder = Decoder(hidden_size=512, output_size=300)
+    decoder = Decoder(hidden_size=args.batch_size, output_size=args.dec_hidden_dim)
     
     bert = bert.to(device)
     decoder = decoder.to(device)
 
-    bert_optimizer = Adam(bert.params(),lr=0.001)
-    decoder_optimizer = Adam(decoder.params(),lr=0.001)
+    bert_optimizer = Adam(bert.params(),lr=args.lr)
+    decoder_optimizer = Adam(decoder.params(),lr=args.lr)
     
     loss_fn = nn.NLLLoss()
 
-    for epoch in range(epochs):
+    for epoch in range(args.epochs):
         bert.train(); decoder.train()
 
         for i, batch in enumerate(train_dataloader):
@@ -113,4 +97,19 @@ def evaluation(model, valid_dataloader):
 
 
 if __name__ == '__main__':
-    train()
+    args = parse_args()
+    
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(args.seed)
+
+    if torch.cuda.is_available():       
+        device = torch.device("cuda")
+        print(f'There are {torch.cuda.device_count()} GPU(s) available.')
+        print('Device name:', torch.cuda.get_device_name(0))
+    else:
+        print('No GPU available, using the CPU instead.')
+        device = torch.device("cpu")
+    
+    train(args)
