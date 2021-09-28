@@ -20,7 +20,7 @@ class Attention(nn.Module):
     
 class Decoder(nn.Module):
   def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=500,
-               use_attention=True, bidirectional=True):
+               use_attention=True, bidirectional=True, num_layers=1):
     super(Decoder, self).__init__()
     self.hidden_size = hidden_size
     self.use_attention = use_attention
@@ -28,7 +28,8 @@ class Decoder(nn.Module):
     self.dropout = nn.Dropout(dropout_p)
     if use_attention:
       self.attention = Attention(hidden_size, max_length)
-    self.rnn = nn.LSTM(hidden_size, hidden_size, bidirectional=bidirectional)
+    self.rnn = nn.LSTM(hidden_size, hidden_size, 
+                       num_layers=num_layers, bidirectional=bidirectional)
     self.out = nn.Linear(hidden_size, output_size)
 
   def forward(self, input, hidden, encoder_outputs):
