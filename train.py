@@ -23,20 +23,22 @@ else:
     device = torch.device("cpu")
 
 
-def train_step(input, target, loss_fn, decoder_optimizer):
+def train_step(input, target, loss_fn, bert, decoder, 
+               bert_optimizer, decoder_optimizer):
     
     decoder_optimizer.zero_grad();
     
     input_length = input.size(0)
     target_length = target.size(0)
     
-    bert_outputs = None # Generate bert outputs here...
+    bert_outputs = bert(input) # Generate bert outputs here...
     decoder_input = torch.tensor([[SOS_token]], device=device)
-    decoder_hidden = bert_output
+    decoder_hidden = bert_outputs
     loss = 0
     # Generate token and compute loss in each timestep.
     for i in range(target_length):
-        decoder_output, decoder_hidden, attetion_weights = decoder(decoder_input, decoder_hidden, bert_outputs)
+        decoder_output, decoder_hidden, attetion_weights = decoder(
+            decoder_input, decoder_hidden, bert_outputs)
         decoder_input = decoder_output
         loss += loss_fn(decoder_output, target[i])
         if decoder_input.item() == EOS_token:
@@ -45,7 +47,7 @@ def train_step(input, target, loss_fn, decoder_optimizer):
     
     bert_optimizer.step()
     decoder_optimizer.step()
-    return loss.item() / target_length
+    return loss.item() / target_length, attetion_weights
         
     
 def train():
@@ -63,11 +65,14 @@ def train():
                         sampler=RandomSampler(valid_dataset),
                         batch_size=32) 
 
-    model = BertEncoder()
-    model = model.to(device)
+    bert = BertEncoder()
+    decoder = decoder.Decoder(hidden_size=512, output_size=300)
+    
+    bert = bert.to(device)
+    decoder = decoder.to(device)
 
-    bert_optimizer = Adam(model.params(),lr=0.001)
-    decoder_optimizer = Adam(model.params(),lr=0.001)
+    bert_optimizer = Adam(bert.params(),lr=0.001)
+    decoder_optimizer = Adam(decoder.params(),lr=0.001)
     
     loss_fn = nn.NLLLoss()
 
@@ -76,9 +81,10 @@ def train():
 
         for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels = batch
-            input_ids.to(device); attention_masks.to(device); labels.to(device)
+            input_ids.to(device); attention_masks.to(device);labels.to(device)
             
-            train_loss = train_step(input_ids, labels, loss_fn, decoder_optimizer)
+            train_loss, attetion_weights = train_step(input_ids, labels, 
+                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
             
 
         val_loss = evaluation(model, valid_dataloader)
