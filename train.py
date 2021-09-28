@@ -23,7 +23,7 @@ else:
     device = torch.device("cpu")
 
 
-def train_step(input, target, loss_fn, bert, decoder, 
+def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
                bert_optimizer, decoder_optimizer):
     
     decoder_optimizer.zero_grad();
@@ -31,7 +31,7 @@ def train_step(input, target, loss_fn, bert, decoder,
     input_length = input.size(0)
     target_length = target.size(0)
     
-    bert_outputs = bert(input) # Generate bert outputs here...
+    bert_outputs = bert(input, attention_masks) # Generate bert outputs here...
     decoder_input = torch.tensor([[SOS_token]], device=device)
     decoder_hidden = bert_outputs
     loss = 0
@@ -83,7 +83,7 @@ def train():
             input_ids, attention_masks, labels = batch
             input_ids.to(device); attention_masks.to(device);labels.to(device)
             
-            train_loss, attetion_weights = train_step(input_ids, labels, 
+            train_loss, attetion_weights = train_step(input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
             
 
