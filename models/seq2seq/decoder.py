@@ -4,7 +4,7 @@ import torch.nn.functional as F
 
 class Attention(nn.Module):
   def __init__(self, hidden_size, max_length):
-    super(Decoder, self).__init__()
+    super(Attention, self).__init__()
     self.attn = nn.Linear(hidden_size * 2, max_length)
     self.attn_combine = nn.Linear(hidden_size * 2, hidden_size)
     
