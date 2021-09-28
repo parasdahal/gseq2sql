@@ -59,8 +59,8 @@ def train(args):
     bert = bert.to(device)
     decoder = decoder.to(device)
 
-    bert_optimizer = Adam(bert.params(),lr=args.lr)
-    decoder_optimizer = Adam(decoder.params(),lr=args.lr)
+    bert_optimizer = Adam(bert.parameters(),lr=args.lr)
+    decoder_optimizer = Adam(decoder.parameters(),lr=args.lr)
     
     loss_fn = nn.NLLLoss()
 
@@ -70,7 +70,8 @@ def train(args):
 
         for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels = batch
-            input_ids.to(device); attention_masks.to(device);labels.to(device)
+            input_ids, attention_masks, labels = input_ids.to(device), \
+                attention_masks.to(device), labels.to(device)
             
             train_loss, attetion_weights = train_step(input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
