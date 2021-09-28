@@ -1,11 +1,12 @@
 import torch
 import numpy as np
+import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data.sampler import RandomSampler
 from models.query_encoder.bert import BertEncoder
 from data.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
-from models.seq2seq import decoder
+from models.seq2seq.decoder import Decoder
 
 SOS_TOKEN = 101
 EOS_TOKEN = 102
@@ -53,7 +54,7 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     return loss.item() / target_length, attetion_weights
         
     
-def train():
+def train(epochs=50):
 
 
     # setup data_loader instances
@@ -69,7 +70,7 @@ def train():
                         batch_size=32) 
 
     bert = BertEncoder()
-    decoder = decoder.Decoder(hidden_size=512, output_size=300)
+    decoder = Decoder(hidden_size=512, output_size=300)
     
     bert = bert.to(device)
     decoder = decoder.to(device)
@@ -90,23 +91,24 @@ def train():
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
             
 
-        val_loss = evaluation(model, valid_dataloader)
+        # val_loss = evaluation(model, valid_dataloader)
 
 
 def evaluation(model, valid_dataloader):
-    model.eval()
+    return NotImplementedError()
+    # model.eval()
 
-    for batch in valid_dataloader:
-        input_ids, attention_masks, labels = batch
-        input_ids.to(device); attention_masks.to(device); labels.to(device)
+    # for batch in valid_dataloader:
+    #     input_ids, attention_masks, labels = batch
+    #     input_ids.to(device); attention_masks.to(device); labels.to(device)
 
-        with torch.no_grad():
-            preds = model(input_ids, attention_masks)
+    #     with torch.no_grad():
+    #         preds = model(input_ids, attention_masks)
 
-        loss = loss_fn(preds, labels)
-        ...
+    #     loss = loss_fn(preds, labels)
+    #     ...
 
-        return loss
+    #     return loss
 
 
 
