@@ -54,7 +54,7 @@ def train(args):
                         batch_size=args.batch_size) 
 
     bert = BertEncoder()
-    decoder = Decoder(hidden_size=args.batch_size, output_size=args.dec_hidden_dim)
+    decoder = Decoder(hidden_size=args.dec_hidden_dim, output_size=args.dec_hidden_dim)
     
     bert = bert.to(device)
     decoder = decoder.to(device)
