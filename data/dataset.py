@@ -1,5 +1,6 @@
 import os
 import json
+import torch
 from torch.utils.data import Dataset, DataLoader
 
 from transformers import BertTokenizer
@@ -28,7 +29,7 @@ class SpiderDataset(Dataset):
     return len(self.input_ids)
 
   def __getitem__(self, i):
-    return self.input_ids[i], self.att_mask[i], self.queries[i]
+    return torch.tensor(self.input_ids[i]), torch.tensor(self.att_mask[i]), torch.tensor(self.queries[i])
 
 def create_dataloader(json_file, batch_size=1):
   dataset = SpiderDataset(json_file)
