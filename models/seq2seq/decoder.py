@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Attention(nn.module):
+class Attention(nn.Module):
   def __init__(self, hidden_size, max_length):
     super(Decoder, self).__init__()
     self.attn = nn.Linear(hidden_size * 2, max_length)
