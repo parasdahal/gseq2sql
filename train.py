@@ -42,7 +42,9 @@ def train_step(input, target, loss_fn, decoder_optimizer):
         if decoder_input.item() == EOS_token:
             break
     loss.backward()
-    decoder_optimizer()
+    
+    bert_optimizer.step()
+    decoder_optimizer.step()
     return loss.item() / target_length
         
     
