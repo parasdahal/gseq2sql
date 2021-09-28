@@ -28,7 +28,9 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     for i in range(target_length):
         decoder_output, decoder_hidden, attetion_weights = decoder(
             decoder_input, decoder_hidden, bert_outputs)
-        decoder_input = decoder_output
+        _, vocab_id = decoder_output.topk(1)
+        decoder_input = vocab_id.squeeze().detach()
+        
         loss += loss_fn(decoder_output, target[i])
         if decoder_input.item() == EOS_TOKEN:
             break
