@@ -2,7 +2,7 @@ from transformers import BertModel
 import torch.nn as nn
 
 class BertEncoder(nn.Module):
-    def __init__(self, padding_len):
+    def __init__(self):
         super(BertEncoder, self).__init__()
         self.bert = BertModel.from_pretrained(
             "bert-base-uncased" # TODO: discuss which type we need
