@@ -4,7 +4,7 @@ from torch.optim import Adam
 from torch.utils.data.sampler import RandomSampler
 from models.query_encoder.bert import BertEncoder
 from data.dataset import SpiderDataset
-from torch.utils.data import DataLoader, random_split, RandomSampler
+from torch.utils.data import DataLoader, RandomSampler
 
 
 # fix random seeds for reproducibility
@@ -27,8 +27,9 @@ def main():
 
 
     # setup data_loader instances
-    dataset = SpiderDataset('spider/train_spider.json')
-    train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
+    train_dataset = SpiderDataset('spider/train_spider.json')
+    valid_dataset = SpiderDataset('spider/dev.json')
+    # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
 
     train_dataloader = DataLoader(train_dataset,
                         sampler=RandomSampler(train_dataset),
