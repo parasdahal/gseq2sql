@@ -5,7 +5,7 @@ from torch.utils.data.sampler import RandomSampler
 from models.query_encoder.bert import BertEncoder
 from data.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
-
+from models.seq2seq import decoder
 
 # fix random seeds for reproducibility
 SEED = 123
@@ -23,7 +23,30 @@ else:
     device = torch.device("cpu")
 
 
-def main():
+def train_step(input, target, loss_fn, decoder_optimizer):
+    
+    decoder_optimizer.zero_grad();
+    
+    input_length = input.size(0)
+    target_length = target.size(0)
+    
+    bert_outputs = None # Generate bert outputs here...
+    decoder_input = torch.tensor([[SOS_token]], device=device)
+    decoder_hidden = bert_output
+    loss = 0
+    # Generate token and compute loss in each timestep.
+    for i in range(target_length):
+        decoder_output, decoder_hidden, attetion_weights = decoder(decoder_input, decoder_hidden, bert_outputs)
+        decoder_input = decoder_output
+        loss += loss_fn(decoder_output, target[i])
+        if decoder_input.item() == EOS_token:
+            break
+    loss.backward()
+    decoder_optimizer()
+    return loss.item() / target_length
+        
+    
+def train():
 
 
     # setup data_loader instances
@@ -41,9 +64,10 @@ def main():
     model = BertEncoder()
     model = model.to(device)
 
-    optimizer = Adam(model.params(),lr=0.001)
+    bert_optimizer = Adam(model.params(),lr=0.001)
+    decoder_optimizer = Adam(model.params(),lr=0.001)
     
-    loss_fn = ...
+    loss_fn = nn.NLLLoss()
 
     for epoch in range(epochs):
         model.train()
@@ -51,14 +75,9 @@ def main():
         for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels = batch
             input_ids.to(device); attention_masks.to(device); labels.to(device)
-
-            model.zero_grad()
-            preds = model(input_ids, attention_masks)
-
-            loss = loss_fn(preds, labels)
-
-            loss.backward()
-            optimizer.step()
+            
+            train_loss = train_step(input_ids, labels, loss_fn, decoder_optimizer)
+            
 
         val_loss = evaluation(model, valid_dataloader)
 
@@ -81,4 +100,4 @@ def evaluation(model, valid_dataloader):
 
 
 if __name__ == '__main__':
-    main()
+    train()
