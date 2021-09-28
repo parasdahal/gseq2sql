@@ -9,7 +9,7 @@ class BertEncoder(nn.Module):
         )
 
     def forward(self, input_ids, attention_masks):
-        outputs = self.model(input_ids=input_ids, 
+        outputs = self.bert(input_ids=input_ids, 
                             attention_mask=attention_masks)
 
         # As done in https://skimai.com/fine-tuning-bert-for-sentiment-analysis/
