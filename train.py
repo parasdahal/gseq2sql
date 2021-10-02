@@ -12,6 +12,20 @@ from utils import parse_args
 SOS_TOKEN = 101
 EOS_TOKEN = 102
 
+torch.manual_seed(42)
+np.random.seed(42)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+
+if torch.cuda.is_available():       
+    device = torch.device("cuda")
+    print('There are {torch.cuda.device_count()} GPU(s) available.')
+    print('Device name:', torch.cuda.get_device_name(0))
+else:
+    print('No GPU available, using the CPU instead.')
+    device = torch.device("cpu")
+
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
                bert_optimizer, decoder_optimizer):
     
@@ -114,18 +128,4 @@ def evaluation(model, valid_dataloader):
 
 if __name__ == '__main__':
     args = parse_args()
-    
-    torch.manual_seed(args.seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(args.seed)
-
-    if torch.cuda.is_available():       
-        device = torch.device("cuda")
-        print('There are {torch.cuda.device_count()} GPU(s) available.')
-        print('Device name:', torch.cuda.get_device_name(0))
-    else:
-        print('No GPU available, using the CPU instead.')
-        device = torch.device("cpu")
-    
     train(args)
