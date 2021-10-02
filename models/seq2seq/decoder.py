@@ -29,7 +29,9 @@ class Decoder(nn.Module):
     if use_attention:
       self.attention = Attention(hidden_size, max_length)
     self.rnn = nn.LSTM(hidden_size, hidden_size, 
-                       num_layers=num_layers, bidirectional=bidirectional)
+                       num_layers=num_layers, 
+                       bidirectional=bidirectional, 
+                       batch_first=True)
     self.out = nn.Linear(hidden_size, output_size)
 
   def forward(self, input, hidden, encoder_outputs):
@@ -40,6 +42,7 @@ class Decoder(nn.Module):
       output, attn_weights = self.attention(output, hidden, encoder_outputs);
     
     output = F.relu(output)
+    # print(hidden.size(), output.size())
     output, hidden = self.rnn(output, hidden)
 
     output = F.log_softmax(self.out(output[0]), dim=1)

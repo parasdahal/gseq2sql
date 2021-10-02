@@ -15,31 +15,41 @@ EOS_TOKEN = 102
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
                bert_optimizer, decoder_optimizer):
     
+    bert_optimizer.zero_grad();
     decoder_optimizer.zero_grad();
     
-    input_length = input.size(0)
-    target_length = target.size(0)
+    bert_outputs = bert(input, attention_masks)
+    batch_size, hidden_dim = bert_outputs.size()
+    target_size = target.size(0)
     
-    bert_outputs = bert(input, attention_masks) # Generate bert outputs here...
-    decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
-    decoder_hidden = bert_outputs
     loss = 0
-    # Generate token and compute loss in each timestep.
-    for i in range(target_length):
-        decoder_output, decoder_hidden, attetion_weights = decoder(
-            decoder_input, decoder_hidden, bert_outputs)
-        _, vocab_id = decoder_output.topk(1)
-        decoder_input = vocab_id.squeeze().detach()
+    for batch_i in range(batch_size):
+        # Size = [1, 1]
+        decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
+        # Size = [1, 1, hidden_dim]
+        h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
+        c0 = torch.zeros(1, 1, hidden_dim).to(device)
         
-        loss += loss_fn(decoder_output, target[i])
-        if decoder_input.item() == EOS_TOKEN:
-            break
+        decoder_hidden = (h0, c0)
+        
+        # Generate token and compute loss in each timestep.
+        loss_ = 0
+        for target_i in range(target_size):
+
+            decoder_output, decoder_hidden = decoder(
+                decoder_input, decoder_hidden, bert_outputs)
+            
+            _, vocab_id = decoder_output.topk(1)
+            decoder_input = vocab_id.squeeze().detach()
+            expected_target = torch.tensor([target[batch_i][target_i]], device=device)
+            loss_ += loss_fn(decoder_output, expected_target)
+            if decoder_input.item() == EOS_TOKEN:
+                break
+        loss += loss_ / target_size
     loss.backward()
-    
     bert_optimizer.step()
     decoder_optimizer.step()
-    return loss.item() / target_length, attetion_weights
-        
+    return loss.item() / batch_size
     
 def train(args):
 
@@ -58,7 +68,7 @@ def train(args):
     args.vocab_size = train_dataset.get_vocab_size()
 
     bert = BertEncoder()
-    decoder = Decoder(hidden_size=args.dec_hidden_dim, output_size=args.vocab_size)
+    decoder = Decoder(hidden_size=args.hidden_dim, output_size=args.vocab_size)
     
     bert = bert.to(device)
     decoder = decoder.to(device)
@@ -77,7 +87,7 @@ def train(args):
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
             
-            train_loss, attetion_weights = train_step(input_ids, attention_masks, labels, 
+            train_loss = train_step(input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
             print('Batch loss: ', train_loss)
 
