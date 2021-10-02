@@ -17,15 +17,6 @@ np.random.seed(42)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
-
-if torch.cuda.is_available():       
-    device = torch.device("cuda")
-    print('There are {torch.cuda.device_count()} GPU(s) available.')
-    print('Device name:', torch.cuda.get_device_name(0))
-else:
-    print('No GPU available, using the CPU instead.')
-    device = torch.device("cpu")
-
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
                bert_optimizer, decoder_optimizer):
     
@@ -66,7 +57,15 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     return loss.item() / batch_size
     
 def train(args):
-
+    
+    if torch.cuda.is_available():       
+        device = torch.device("cuda")
+        print('There are {torch.cuda.device_count()} GPU(s) available.')
+        print('Device name:', torch.cuda.get_device_name(0))
+    else:
+        print('No GPU available, using the CPU instead.')
+        device = torch.device("cpu")
+    
     # Setup data_loader instances.
     train_dataset = SpiderDataset(args.dataset_path,'train_spider.json')
     valid_dataset = SpiderDataset(args.dataset_path,'dev.json')
