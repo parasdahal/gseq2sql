@@ -18,7 +18,7 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
-               bert_optimizer, decoder_optimizer):
+               bert_optimizer, decoder_optimizer, device):
     
     bert_optimizer.zero_grad();
     decoder_optimizer.zero_grad();
@@ -101,7 +101,7 @@ def train(args):
                 attention_masks.to(device), labels.to(device)
             
             train_loss = train_step(input_ids, attention_masks, labels, 
-                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer)
+                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, device)
             print('Batch loss: ', train_loss)
 
         # val_loss = evaluation(model, valid_dataloader)
