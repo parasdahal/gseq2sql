@@ -54,8 +54,8 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
 def train(args):
 
     # Setup data_loader instances.
-    train_dataset = SpiderDataset('data/spider/train_spider.json')
-    valid_dataset = SpiderDataset('data/spider/dev.json')
+    train_dataset = SpiderDataset(args.dataset_path,'train_spider.json')
+    valid_dataset = SpiderDataset(args.dataset_path,'dev.json')
     # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
 
     train_dataloader = DataLoader(train_dataset,

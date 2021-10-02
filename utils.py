@@ -12,6 +12,11 @@ def parse_args():
                       default=30522,
                       type=int,
                       help='Size of the vocabulary')
+  # Dataset hyperparameters
+  parser.add_argument('--dataset_path',
+                      default='./data/spider',
+                      type=str,
+                      help='Path to the spider dataset')
   # Optimizer hyperparameters
   parser.add_argument('--lr',
                       default=0.001,

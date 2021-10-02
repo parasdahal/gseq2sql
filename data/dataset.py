@@ -7,13 +7,13 @@ from transformers import BertTokenizer
 
 class SpiderDataset(Dataset):
 
-  def __init__(self, json_file):
+  def __init__(self, dataset_path, json_file):
     questions = []
     queries = []
 
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-    with open(json_file) as f:
+    with open(os.path.join(dataset_path, json_file)) as f:
       data = json.load(f)
       for item in data:
         questions.append(item['question'])
@@ -34,8 +34,8 @@ class SpiderDataset(Dataset):
   def __getitem__(self, i):
     return torch.tensor(self.input_ids[i]), torch.tensor(self.att_mask[i]), torch.tensor(self.queries[i])
 
-def create_dataloader(json_file, batch_size=1):
-  dataset = SpiderDataset(json_file)
+def create_dataloader(dataset_path, json_file, batch_size=1):
+  dataset = SpiderDataset(dataset_path, json_file)
   dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
   return dataloader
 
