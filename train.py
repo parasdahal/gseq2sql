@@ -30,7 +30,6 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     loss = 0
     for batch_i in range(batch_size):
         # Size = [1, 1]
-        print(batch_i)
         decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
         # Size = [1, 1, hidden_dim]
         h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
@@ -93,7 +92,6 @@ def train(args):
     decoder_optimizer = Adam(decoder.parameters(),lr=args.lr)
     
     loss_fn = nn.NLLLoss()
-
     sum_loss = 0
 
     for epoch in range(args.epochs):
@@ -101,8 +99,7 @@ def train(args):
         bert.train(); decoder.train()
 
         for i, batch in enumerate(train_dataloader):
-            print(i)
-            input_ids, attention_masks, labels = batch
+            input_ids, attention_masks, labels, db_id = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
             
@@ -179,25 +176,25 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
     print('Starting validation')
     bert.eval(); decoder.eval()
 
-    total_generated = []; total_expected = []
+    total_generated = []; total_expected = []; total_dbid = []
 
     for i, batch in enumerate(valid_dataloader):
-        input_ids, attention_masks, labels = batch
+        input_ids, attention_masks, labels, db_id = batch
         input_ids, attention_masks, labels = input_ids.to(device), \
             attention_masks.to(device), labels.to(device)
         
         train_loss, generated, expected = valid_step(input_ids, attention_masks, labels, 
                 loss_fn, bert, decoder, device)
         print('Batch loss: ', train_loss)
-        total_generated.append(generated); total_expected.append(expected)
+        total_generated.append(generated); total_expected.append(expected); total_dbid.append(db_id)
 
-    create_csv(total_generated, total_expected)
+    create_csv(total_generated, total_expected, total_dbid)
 
-def create_csv(generated, expected):
+def create_csv(generated, expected, dbid):
     with open('outputs.csv', 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
-        for (gen, exp) in zip(generated, expected):
-            writer.writerow([gen, exp])
+        for (gen, exp, dbid) in zip(generated, expected, dbid):
+            writer.writerow([gen, exp, dbid])
 
 
 if __name__ == '__main__':
