@@ -1,5 +1,28 @@
 import argparse
 
+class EarlyStopping():
+  # source: https://debuggercafe.com/using-learning-rate-scheduler-and-early-stopping-with-pytorch/
+  def __init__(self, patience=5, min_delta=0):
+      self.patience = patience
+      self.min_delta = min_delta
+      self.counter = 0
+      self.best_loss = None
+      self.early_stop = False
+
+  def __call__(self, val_loss):
+      if self.best_loss == None:
+          self.best_loss = val_loss
+      elif self.best_loss - val_loss > self.min_delta:
+          self.best_loss = val_loss
+      elif self.best_loss - val_loss < self.min_delta:
+          self.counter += 1
+          print(f"INFO: Early stopping counter {self.counter} of {self.patience}")
+          if self.counter >= self.patience:
+              print('INFO: Early stopping')
+              self.early_stop = True
+      return self.early_stop
+
+
 def parse_args():
   parser = argparse.ArgumentParser(
       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -14,7 +37,7 @@ def parse_args():
                       help='Size of the vocabulary')
   # Dataset hyperparameters
   parser.add_argument('--dataset_path',
-                      default='./data/spider',
+                      default='./datasets/spider',
                       type=str,
                       help='Path to the spider dataset')
   # Optimizer hyperparameters
@@ -28,7 +51,7 @@ def parse_args():
                       help='Minibatch size')
   # Other hyperparameters
   parser.add_argument('--epochs',
-                      default=5,
+                      default=100,
                       type=int,
                       help='Max number of epochs')
   parser.add_argument('--seed', default=42, type=int, help='Random seed')
