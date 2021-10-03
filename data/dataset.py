@@ -10,6 +10,7 @@ class SpiderDataset(Dataset):
   def __init__(self, dataset_path, json_file):
     questions = []
     queries = []
+    self.dbs = []
 
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -18,6 +19,7 @@ class SpiderDataset(Dataset):
       for item in data:
         questions.append(item['question'])
         queries.append(item['query'])
+        self.dbs.append(item['db_id'])
 
     tokenized_questions = self.tokenizer(questions, truncation=True, padding=True, add_special_tokens=True)
     tokenized_queries = self.tokenizer(queries, truncation=True, padding=True, add_special_tokens=True)
@@ -32,7 +34,7 @@ class SpiderDataset(Dataset):
     return len(self.input_ids)
 
   def __getitem__(self, i):
-    return torch.tensor(self.input_ids[i]), torch.tensor(self.att_mask[i]), torch.tensor(self.queries[i])
+    return torch.tensor(self.input_ids[i]), torch.tensor(self.att_mask[i]), torch.tensor(self.queries[i]), self.dbs[i]
 
 def create_dataloader(dataset_path, json_file, batch_size=1):
   dataset = SpiderDataset(dataset_path, json_file)

@@ -96,7 +96,7 @@ def train(args):
         bert.train(); decoder.train()
 
         for i, batch in enumerate(train_dataloader):
-            input_ids, attention_masks, labels = batch
+            input_ids, attention_masks, labels, _ = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
             
