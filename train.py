@@ -30,6 +30,7 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     loss = 0
     for batch_i in range(batch_size):
         # Size = [1, 1]
+        print(batch_i)
         decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
         # Size = [1, 1, hidden_dim]
         h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
