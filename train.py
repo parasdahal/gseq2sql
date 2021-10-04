@@ -121,10 +121,9 @@ def train(args):
         evaluation(bert, decoder, loss_fn, valid_dataloader)
         if early_stopping(epoch_loss):
             break
-
-    
-    torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
-    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
+        print('Saving the model...')
+        torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
+        torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
@@ -164,7 +163,7 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
 
                 decoder_input = vocab_id.squeeze().detach()
                 expected_target = torch.tensor([target[batch_i][target_i]], device=device)
-                expected_output.extend(expected_target)
+                expected_output.extend(expected_target.item())
 
                 loss_ += loss_fn(decoder_output, expected_target)
                 if decoder_input.item() == EOS_TOKEN:
