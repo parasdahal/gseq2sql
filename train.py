@@ -163,7 +163,7 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
 
                 decoder_input = vocab_id.squeeze().detach()
                 expected_target = torch.tensor([target[batch_i][target_i]], device=device)
-                expected_output.extend(expected_target.item())
+                expected_output.extend(target[batch_i][target_i])
 
                 loss_ += loss_fn(decoder_output, expected_target)
                 if decoder_input.item() == EOS_TOKEN:
