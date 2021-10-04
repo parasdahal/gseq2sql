@@ -104,6 +104,7 @@ def train(args):
         print('Training epoch: ', epoch)
         bert.train(); decoder.train()
 
+        sum_loss = 0
         for i, batch in enumerate(train_dataloader):
             input_ids, attention_masks, labels, db_id = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
