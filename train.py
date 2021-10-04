@@ -121,9 +121,10 @@ def train(args):
         evaluation(bert, decoder, loss_fn, valid_dataloader)
         if early_stopping(epoch_loss):
             break
-        print('Saving the model...')
-        torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
-        torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
+    
+    print('Training completed. Saving the model...')
+    torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
+    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
