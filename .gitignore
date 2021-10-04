@@ -1,6 +1,10 @@
 datasets/spider
 data/spider
 checkpoints/
+expected.pkl
+generated.pkl
+dbid.pkl
+outputs.csv
 # Byte-compiled / optimized / DLL files
 __pycache__/
 

@@ -26,7 +26,7 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     
     bert_outputs = bert(input, attention_masks)
     batch_size, hidden_dim = bert_outputs.size()
-    target_size = target.size(0)
+    #target_size = target.size(0)
     
     loss = 0
     for batch_i in range(batch_size):
@@ -37,6 +37,11 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
         c0 = torch.zeros(1, 1, hidden_dim).to(device)
         
         decoder_hidden = (h0, c0)
+
+        try:
+            target_size = list(target[batch_i]).index(0)
+        except:
+            target_size = target[batch_i].size(0)
         
         # Generate token and compute loss in each timestep.
         loss_ = 0
@@ -95,27 +100,24 @@ def train(args):
     loss_fn = nn.NLLLoss()
     sum_loss = 0
 
-    skip = False
+    for epoch in range(args.epochs):
+        print('Training epoch: ', epoch)
+        bert.train(); decoder.train()
 
-    if skip:
-        for epoch in range(args.epochs):
-            print('Training epoch: ', epoch)
-            bert.train(); decoder.train()
-
-            for i, batch in enumerate(train_dataloader):
-                input_ids, attention_masks, labels, db_id = batch
-                input_ids, attention_masks, labels = input_ids.to(device), \
-                    attention_masks.to(device), labels.to(device)
-                
-                train_loss = train_step(input_ids, attention_masks, labels, 
-                        loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, device)
-                sum_loss += train_loss
-                print('Batch loss: ', train_loss)
+        for i, batch in enumerate(train_dataloader):
+            input_ids, attention_masks, labels, db_id = batch
+            input_ids, attention_masks, labels = input_ids.to(device), \
+                attention_masks.to(device), labels.to(device)
             
-            epoch_loss = sum_loss/i
-            print("Epoch loss: ", epoch_loss)
-            if early_stopping(epoch_loss):
-                break
+            train_loss = train_step(input_ids, attention_masks, labels, 
+                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, device)
+            sum_loss += train_loss
+            print('Batch loss: ', train_loss)
+        
+        epoch_loss = sum_loss/i
+        print("Epoch loss: ", epoch_loss)
+        if early_stopping(epoch_loss):
+            break
 
     evaluation(bert, decoder, loss_fn, valid_dataloader)
     
@@ -143,8 +145,11 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
         
             decoder_hidden = (h0, c0)
 
-            target_size = list(target[batch_i]).index(0)
-        
+            try:
+                target_size = list(target[batch_i]).index(0)
+            except:
+                target_size = target[batch_i].size(0)
+
             # Generate token and compute loss in each timestep.
             loss_ = 0; gen_output = []; expected_output= []
             for target_i in range(target_size):
