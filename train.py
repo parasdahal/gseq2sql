@@ -120,7 +120,7 @@ def train(args):
         if early_stopping(epoch_loss):
             break
 
-    evaluation(bert, decoder, loss_fn, valid_dataloader)
+        evaluation(bert, decoder, loss_fn, valid_dataloader)
     
     torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
     torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
@@ -173,8 +173,6 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
             batch_expected.append(expected_output)
 
     return loss.item() / batch_size, batch_outputs, batch_expected
-
-
 
 
 def evaluation(bert, decoder, loss_fn, valid_dataloader):
