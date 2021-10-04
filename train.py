@@ -1,4 +1,4 @@
-import torch, csv
+import torch, csv, pickle
 import numpy as np
 import torch.nn as nn
 from torch.optim import Adam
@@ -95,28 +95,32 @@ def train(args):
     loss_fn = nn.NLLLoss()
     sum_loss = 0
 
-    for epoch in range(args.epochs):
-        print('Training epoch: ', epoch)
-        bert.train(); decoder.train()
+    skip = False
 
-        for i, batch in enumerate(train_dataloader):
-            input_ids, attention_masks, labels, db_id = batch
-            input_ids, attention_masks, labels = input_ids.to(device), \
-                attention_masks.to(device), labels.to(device)
+    if skip:
+        for epoch in range(args.epochs):
+            print('Training epoch: ', epoch)
+            bert.train(); decoder.train()
+
+            for i, batch in enumerate(train_dataloader):
+                input_ids, attention_masks, labels, db_id = batch
+                input_ids, attention_masks, labels = input_ids.to(device), \
+                    attention_masks.to(device), labels.to(device)
+                
+                train_loss = train_step(input_ids, attention_masks, labels, 
+                        loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, device)
+                sum_loss += train_loss
+                print('Batch loss: ', train_loss)
             
-            train_loss = train_step(input_ids, attention_masks, labels, 
-                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, device)
-            sum_loss += train_loss
-            print('Batch loss: ', train_loss)
-        
-        epoch_loss = sum_loss/i
-        if early_stopping(epoch_loss):
-            break
+            epoch_loss = sum_loss/i
+            print("Epoch loss: ", epoch_loss)
+            if early_stopping(epoch_loss):
+                break
 
     evaluation(bert, decoder, loss_fn, valid_dataloader)
     
-    torch.save(bert.state_dict(), './checkpoints/')
-    torch.save(decoder.state_dict(), './checkpoints/')
+    torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
+    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
@@ -127,7 +131,7 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
     with torch.no_grad():
         bert_outputs = bert(input, attention_masks)
         batch_size, hidden_dim = bert_outputs.size()
-        target_size = target.size(0)
+        #target_size = target.size(0)
     
         loss = 0
         for batch_i in range(batch_size):
@@ -138,6 +142,8 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
             c0 = torch.zeros(1, 1, hidden_dim).to(device)
         
             decoder_hidden = (h0, c0)
+
+            target_size = list(target[batch_i]).index(0)
         
             # Generate token and compute loss in each timestep.
             loss_ = 0; gen_output = []; expected_output= []
@@ -145,12 +151,13 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
 
                 decoder_output, decoder_hidden = decoder(
                     decoder_input, decoder_hidden, bert_outputs)
-                gen_output.append(decoder_output)
-
+                
                 _, vocab_id = decoder_output.topk(1)
+                gen_output.extend([vocab_id.item()])
+
                 decoder_input = vocab_id.squeeze().detach()
                 expected_target = torch.tensor([target[batch_i][target_i]], device=device)
-                expected_output.append(expected_target)
+                expected_output.extend(expected_target)
 
                 loss_ += loss_fn(decoder_output, expected_target)
                 if decoder_input.item() == EOS_TOKEN:
@@ -192,10 +199,22 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
     create_csv(total_generated, total_expected, total_dbid)
 
 def create_csv(generated, expected, dbid):
+
+    #import pdb; pdb.set_trace()
+    with open('generated.pkl', 'wb') as f:
+      pickle.dump(generated, f)
+    with open('expected.pkl', 'wb') as f:
+      pickle.dump(expected, f)
+    with open('dbid.pkl', 'wb') as f:
+      pickle.dump(dbid, f)
+
+    #import pdb; pdb.set_trace()
     with open('outputs.csv', 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         for (gen, exp, dbid) in zip(generated, expected, dbid):
-            writer.writerow([gen, exp, dbid])
+            for (g, e, db) in zip(gen, exp, dbid):
+                writer.writerow([g, e, db])
+
 
 
 if __name__ == '__main__':
