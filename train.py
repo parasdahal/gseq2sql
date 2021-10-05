@@ -61,16 +61,16 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
                 decoder_input = expected_target
             loss_ += loss_fn(decoder_output, expected_target)
             
-            gen_output.append(ids_to_string(vocab_id.item()))
-            expected_output.append(ids_to_string(expected_target.item()))
+            gen_output.append(vocab_id.item())
+            expected_output.append(expected_target.item())
             
             if decoder_input.item() == EOS_TOKEN:
                 break
         loss += loss_ / target_size
         
         if verbose and batch_i < 10:
-            batch_outputs.append(gen_output)
-            batch_expected.append(expected_output)
+            batch_outputs.append(ids_to_string(gen_output))
+            batch_expected.append(ids_to_string(expected_output))
     
     # Print generated and expected strings.
     if verbose:
