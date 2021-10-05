@@ -4,9 +4,26 @@ import pandas as pd
 import Levenshtein
 import numpy as np
 import torch
+import torch.nn.functional as F
+from torch.nn.utils.rnn import pad_sequence
 
 dataset_path = './data/spider'
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+
+# Function which summarizes 3 metrics for results
+# Prints and returns exact match accuracy, exact set match accuracy
+# and average Levenshtein similarity
+def summarize_query_results(csv_fname):
+    exact_match_acc = eval_exact_match_accuracy(csv_fname)
+    set_match_acc = eval_set_match_accuracy(csv_fname)
+    sim_score = eval_query_similarity(csv_fname)
+
+    print(f'Exact Match Accuracy: {exact_match_acc}')
+    print(f'Exact Set Match Accuracy: {set_match_acc}')
+    print(f'Average Levenshtein similarity: {sim_score}')
+
+    return exact_match_acc, set_match_acc, sim_score
 
 def eval_query_similarity(csv_fname, split='validation'):
     """
@@ -19,14 +36,13 @@ def eval_query_similarity(csv_fname, split='validation'):
             Average Levenshtein distance between all pairs
     """
     # Read predicted and gt queries
-    pred_queries = read_csv(csv_fname)
-    valid_dataset = SpiderDataset(dataset_path,'dev.json')
+    pred_queries, gt_queries = read_csv(csv_fname)
 
     # Loop over each instance of the dataset
     similarities = []
-    for i in range(valid_dataset.__len__()):
+    for i in range(len(gt_queries)):
         # Read gt and predicted query
-        ids, mask, gt_query, _ = valid_dataset.__getitem__(i)
+        gt_query = gt_queries[i]
         pred_query = pred_queries[i]
 
         # Convert ids to string, calculate levenshtein distance between the pred and gt query
@@ -51,15 +67,26 @@ def eval_exact_match_accuracy(csv_fname, split='validation'):
             wrt the specified split
     """
     # Read predicted and gt queries
-    pred_queries = read_csv(csv_fname)
-    valid_dataset = SpiderDataset(dataset_path,'dev.json')
-    gt_queries = valid_dataset.queries
+    pred_queries, gt_queries = read_csv(csv_fname)
 
     # N = number of queries in total to evaluate
     N = len(pred_queries)
+    # L = max length of sequences for padding pred queries
+    L = len(gt_queries[0])
 
     # Convert queries to tensors
-    pred_queries, gt_queries = torch.tensor(pred_queries), torch.tensor(gt_queries)
+    gt_queries = [torch.tensor(query) for query in gt_queries]
+    gt_queries = pad_sequence(gt_queries, batch_first=True)
+    pred_queries = [torch.tensor(query) for query in pred_queries]
+    pred_queries = pad_sequence(pred_queries, batch_first=True)
+
+    # Pad the shorter tensor to match the size of the longer tensor
+    if gt_queries.shape[1] > pred_queries.shape[1]:
+        L = gt_queries.shape[1]
+        pred_queries = F.pad(pred_queries, (0, (L - pred_queries.shape[1])))
+    elif gt_queries.shape[1] < pred_queries.shape[1]:
+        L = pred_queries.shape[1]
+        gt_queries = F.pad(gt_queries, (0, (L - gt_queries.shape[1])))
 
     # Create tensor with 1's for incorrect predictions, 0's for correct predictions of SQL queries
     incorrect_pred = torch.sum(pred_queries != gt_queries, dim=1)
@@ -83,14 +110,13 @@ def eval_set_match_accuracy(csv_fname, split='validation'):
             wrt the specified split
     """
     # Read predicted and gt queries
-    pred_queries = read_csv(csv_fname)
-    dataset = SpiderDataset(dataset_path,'dev.json')
+    pred_queries, gt_queries = read_csv(csv_fname)
 
     # Loop over each instance of the dataset
     set_accuracies = []
-    for i in range(dataset.__len__()):
+    for i in range(len(gt_queries)):
         # Read gt and predicted query
-        ids, mask, gt_query, _ = dataset.__getitem__(i)
+        gt_query = gt_queries[i]
         pred_query = pred_queries[i]
 
         # Convert to string, then split and convert to a set
@@ -112,11 +138,29 @@ def ids_to_string(ids):
 
 # Helper function which reads CSV, returns query ids of shape (dataset_size x sentence length)
 def read_csv(csv_fname):
-    pred_queries = pd.read_csv(csv_fname)
-    pred_queries = [row[1].split(' ') for idx, row in pred_queries.iterrows()]
+    results_csv = pd.read_csv(csv_fname, header=None)
+    pred_queries = results_csv.iloc[:,0]
+    pred_queries = [row.replace('[','').replace(']','').split(', ') for i, row in pred_queries.iteritems()]
     pred_queries = [[int(id) for id in query] for query in pred_queries]
 
-    return pred_queries
+    gt_queries = results_csv.iloc[:,1]
+    gt_queries = [row.replace('[','').replace(']','').split(', ') for i, row in gt_queries.iteritems()]
+    gt_queries = [[int(id) for id in query] for query in gt_queries]
+
+    return pred_queries, gt_queries
+
+def save_string_csv(csv_fname):
+    pred_queries, gt_queries = read_csv(csv_fname)
+
+    query_strings = []
+    for pred_q, gt_q in zip(pred_queries, gt_queries):
+        pred_q, gt_q = ids_to_string(pred_q), ids_to_string(gt_q)
+
+        query_strings.append((pred_q, gt_q))
+        
+    df = pd.DataFrame(query_strings)
+    df.to_csv('queries_as_strings.csv')
+
 
 # Only for testing before having access to actual decoder output CSVs
 # Loads the validation set ids into a csv
@@ -128,11 +172,5 @@ def dump_test_csv():
     df = pd.DataFrame(queries_ids)
     df.to_csv('dev_ids.csv')
 
-
-# dump_test_csv()
-
-# eval_query_similarity('dev_ids.csv')
-
-# eval_exact_match_accuracy('dev_ids.csv')
-
-eval_set_match_accuracy('dev_ids.csv')
+summarize_query_results('outputs (10).csv')
+save_string_csv('outputs (10).csv')
