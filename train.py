@@ -8,6 +8,7 @@ from models.query_decoder.lstm import LSTMDecoder
 from datasets.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
 from utils import parse_args, EarlyStopping
+from eval import ids_to_string
 
 SOS_TOKEN = 101
 EOS_TOKEN = 102
@@ -218,12 +219,15 @@ def create_csv(generated, expected, dbid):
     with open('dbid.pkl', 'wb') as f:
       pickle.dump(dbid, f)
 
+    generated_strings = [[ids_to_string(id) for id in batch] for batch in generated]
+    expected_strings = [[ids_to_string(id) for id in batch] for batch in expected]
+
     #import pdb; pdb.set_trace()
     with open('outputs.csv', 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
-        for (gen, exp, dbid) in zip(generated, expected, dbid):
-            for (g, e, db) in zip(gen, exp, dbid):
-                writer.writerow([g, e, db])
+        for (gen, exp, dbid, gen_s, exp_s) in zip(generated, expected, dbid, generated_strings, expected_strings):
+            for (g, e, db, gs, es) in zip(gen, exp, dbid, gen_s, exp_s):
+                writer.writerow([g, e, db, gs, es])
 
 
 
