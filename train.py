@@ -19,7 +19,7 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.enable = False
 
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
-               bert_optimizer, decoder_optimizer, device):
+               bert_optimizer, decoder_optimizer,teacher_forcing, device):
     
     bert_optimizer.zero_grad();
     decoder_optimizer.zero_grad();
@@ -49,10 +49,12 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
 
             decoder_output, decoder_hidden = decoder(
                 decoder_input, decoder_hidden, bert_outputs)
-            
-            _, vocab_id = decoder_output.topk(1)
-            decoder_input = vocab_id.squeeze().detach()
             expected_target = torch.tensor([target[batch_i][target_i]], device=device)
+            if teacher_forcing:
+                _, vocab_id = decoder_output.topk(1)
+                decoder_input = vocab_id.squeeze().detach()
+            else:
+                decoder_input = expected_target
             loss_ += loss_fn(decoder_output, expected_target)
             if decoder_input.item() == EOS_TOKEN:
                 break
@@ -111,7 +113,7 @@ def train(args):
                 attention_masks.to(device), labels.to(device)
             
             train_loss = train_step(input_ids, attention_masks, labels, 
-                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, device)
+                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, args.teacher_forcing, device)
             sum_loss += train_loss
             print('Batch loss: ', train_loss)
         

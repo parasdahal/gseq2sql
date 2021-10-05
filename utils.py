@@ -35,6 +35,10 @@ def parse_args():
                       default=30522,
                       type=int,
                       help='Size of the vocabulary')
+  parser.add_argument('--teacher_forcing',
+                      default=False,
+                      type=bool,
+                      help='Use teacher forcing training')
   # Dataset hyperparameters
   parser.add_argument('--dataset_path',
                       default='./datasets/spider',
