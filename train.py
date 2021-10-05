@@ -4,9 +4,9 @@ import torch.nn as nn
 from torch.optim import Adam
 from torch.utils.data.sampler import RandomSampler
 from models.query_encoder.bert import BertEncoder
+from models.query_decoder.lstm import LSTMDecoder
 from datasets.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
-from models.seq2seq.decoder import Decoder
 from utils import parse_args, EarlyStopping
 
 SOS_TOKEN = 101
@@ -91,7 +91,7 @@ def train(args):
     early_stopping = EarlyStopping()
 
     bert = BertEncoder()
-    decoder = Decoder(hidden_size=args.hidden_dim, output_size=args.vocab_size)
+    decoder = LSTMDecoder(hidden_size=args.hidden_dim, output_size=args.vocab_size)
     
     bert = bert.to(device)
     decoder = decoder.to(device)

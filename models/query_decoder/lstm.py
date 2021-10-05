@@ -21,7 +21,7 @@ class Attention(nn.Module):
     output = self.attn_combine(output).unsqueeze(0)
     return output, attn_weights
     
-class Decoder(nn.Module):
+class LSTMDecoder(nn.Module):
   def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=500,
                use_attention=False, bidirectional=False, num_layers=1):
     super(Decoder, self).__init__()
