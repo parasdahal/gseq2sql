@@ -101,6 +101,8 @@ def train(args):
     
     loss_fn = nn.NLLLoss()
     sum_loss = 0
+    
+    if(args.teacher_forcing): print('Using teacher forcing for training...')
 
     for epoch in range(args.epochs):
         print('Training epoch: ', epoch)
