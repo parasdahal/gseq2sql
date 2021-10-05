@@ -50,7 +50,7 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
             decoder_output, decoder_hidden = decoder(
                 decoder_input, decoder_hidden, bert_outputs)
             expected_target = torch.tensor([target[batch_i][target_i]], device=device)
-            if teacher_forcing:
+            if not teacher_forcing:
                 _, vocab_id = decoder_output.topk(1)
                 decoder_input = vocab_id.squeeze().detach()
             else:

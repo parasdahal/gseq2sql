@@ -41,7 +41,7 @@ def parse_args():
                       help='Use teacher forcing training')
   # Dataset hyperparameters
   parser.add_argument('--dataset_path',
-                      default='./datasets/spider',
+                      default='./data/spider',
                       type=str,
                       help='Path to the spider dataset')
   # Optimizer hyperparameters
