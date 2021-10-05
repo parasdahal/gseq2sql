@@ -68,15 +68,17 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
                 break
         loss += loss_ / target_size
         
-        if verbose and batch_i < 10:
+        if verbose and batch_i < 5:
             batch_outputs.append(ids_to_string(gen_output))
             batch_expected.append(ids_to_string(expected_output))
     
     # Print generated and expected strings.
     if verbose:
         for gen, exp in zip(batch_outputs,batch_expected):
+            print('-'*80)
             print('Expected: ', exp)
             print('Generated: ', gen)
+        print('-'*80)
     
     loss.backward()
     bert_optimizer.step()
@@ -140,6 +142,7 @@ def train(args):
         
         epoch_loss = sum_loss/i
         print("Epoch loss: ", epoch_loss)
+        print("="*80)
 
         evaluation(bert, decoder, loss_fn, valid_dataloader)
         if early_stopping(epoch_loss):
