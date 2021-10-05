@@ -1,4 +1,4 @@
-from data.dataset import SpiderDataset
+from datasets.dataset import SpiderDataset
 from transformers import BertTokenizer
 import pandas as pd
 import Levenshtein
@@ -172,5 +172,5 @@ def dump_test_csv():
     df = pd.DataFrame(queries_ids)
     df.to_csv('dev_ids.csv')
 
-summarize_query_results('outputs (10).csv')
-save_string_csv('outputs (10).csv')
+# summarize_query_results('outputs (10).csv')
+# save_string_csv('outputs (10).csv')
