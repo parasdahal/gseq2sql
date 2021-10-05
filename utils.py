@@ -68,4 +68,8 @@ def parse_args():
                       type=int,
                       help='Progress bar refresh rate')
   parser.add_argument('--log_dir', default='./logs', type=str)
+  parser.add_argument('--verbose',
+                      default=False,
+                      type=bool,
+                      help='Generate 10 samples of output and target after each batch.')
   return parser.parse_args()

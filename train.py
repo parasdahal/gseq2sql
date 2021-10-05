@@ -20,7 +20,7 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.enable = False
 
 def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
-               bert_optimizer, decoder_optimizer,teacher_forcing, device):
+               bert_optimizer, decoder_optimizer,teacher_forcing, device, verbose=False):
     
     bert_optimizer.zero_grad();
     decoder_optimizer.zero_grad();
@@ -29,13 +29,17 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
     batch_size, hidden_dim = bert_outputs.size()
     #target_size = target.size(0)
     
+    batch_outputs = []; batch_expected = []
+    
     loss = 0
+    # Iterate over samples in the batch.
     for batch_i in range(batch_size):
         # Size = [1, 1]
         decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
         # Size = [1, 1, hidden_dim]
         h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
-        c0 = torch.zeros(1, 1, hidden_dim).to(device)
+        # c0 = torch.zeros(1, 1, hidden_dim).to(device)
+        c0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
         
         decoder_hidden = (h0, c0)
 
@@ -45,21 +49,35 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
             target_size = target[batch_i].size(0)
         
         # Generate token and compute loss in each timestep.
-        loss_ = 0
+        loss_ = 0; gen_output = []; expected_output= []
         for target_i in range(target_size):
-
             decoder_output, decoder_hidden = decoder(
                 decoder_input, decoder_hidden, bert_outputs)
             expected_target = torch.tensor([target[batch_i][target_i]], device=device)
+            _, vocab_id = decoder_output.topk(1)
             if not teacher_forcing:
-                _, vocab_id = decoder_output.topk(1)
                 decoder_input = vocab_id.squeeze().detach()
             else:
                 decoder_input = expected_target
             loss_ += loss_fn(decoder_output, expected_target)
+            
+            gen_output.append(ids_to_string(vocab_id.item()))
+            expected_output.append(ids_to_string(expected_target.item()))
+            
             if decoder_input.item() == EOS_TOKEN:
                 break
         loss += loss_ / target_size
+        
+        if verbose and batch_i < 10:
+            batch_outputs.append(gen_output)
+            batch_expected.append(expected_output)
+    
+    # Print generated and expected strings.
+    if verbose:
+        for gen, exp in zip(batch_outputs,batch_expected):
+            print('Expected: ', exp)
+            print('Generated: ', gen)
+    
     loss.backward()
     bert_optimizer.step()
     decoder_optimizer.step()
@@ -116,7 +134,7 @@ def train(args):
                 attention_masks.to(device), labels.to(device)
             
             train_loss = train_step(input_ids, attention_masks, labels, 
-                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, args.teacher_forcing, device)
+                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
             print('Batch loss: ', train_loss)
         
@@ -165,11 +183,11 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
                     decoder_input, decoder_hidden, bert_outputs)
                 
                 _, vocab_id = decoder_output.topk(1)
-                gen_output.extend([vocab_id.item()])
-
+                
                 decoder_input = vocab_id.squeeze().detach()
                 expected_target = torch.tensor([target[batch_i][target_i]], device=device)
                 
+                gen_output.extend([vocab_id.item()])
                 expected_output.extend([expected_target.item()])
 
                 loss_ += loss_fn(decoder_output, expected_target)
