@@ -63,6 +63,6 @@ def create_dataloader(dataset_path, json_file, batch_size=1):
   return dataloader
 
 # train_dataloader = create_dataloader('spider/train_spider.json')
-train_dataset = SpiderDataset('./datasets/spider', 'train_spider.json')
+# train_dataset = SpiderDataset('./datasets/spider', 'train_spider.json')
 
-train_dataset.__getitem__(0)
+# train_dataset.__getitem__(0)
