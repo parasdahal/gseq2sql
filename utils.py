@@ -44,6 +44,10 @@ def parse_args():
                       default='./data/spider',
                       type=str,
                       help='Path to the spider dataset')
+  parser.add_argument('--use_schema',
+                      default=False,
+                      type=bool,
+                      help='Add schema information to the input questions.')
   # Optimizer hyperparameters
   parser.add_argument('--lr',
                       default=0.0001,

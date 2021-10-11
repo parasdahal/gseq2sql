@@ -88,17 +88,17 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
 
 def train(args):
     
-    if torch.cuda.is_available():       
+    if torch.cuda.is_available():
         device = torch.device("cuda")
-        print('There are {torch.cuda.device_count()} GPU(s) available.')
+        print(f'There are {torch.cuda.device_count()} GPU(s) available.')
         print('Device name:', torch.cuda.get_device_name(0))
     else:
         print('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
     
     # Setup data_loader instances.
-    train_dataset = SpiderDataset(args.dataset_path,'train_spider.json')
-    valid_dataset = SpiderDataset(args.dataset_path,'dev.json')
+    train_dataset = SpiderDataset(args.dataset_path,'train_spider.json', use_schema=args.use_schema)
+    valid_dataset = SpiderDataset(args.dataset_path,'dev.json', use_schema=args.use_schema)
     # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
 
     train_dataloader = DataLoader(train_dataset,
@@ -207,7 +207,7 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
     
     if torch.cuda.is_available():       
         device = torch.device("cuda")
-        print('There are {torch.cuda.device_count()} GPU(s) available.')
+        print(f'There are {torch.cuda.device_count()} GPU(s) available.')
         print('Device name:', torch.cuda.get_device_name(0))
     else:
         print('No GPU available, using the CPU instead.')
