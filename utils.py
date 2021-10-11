@@ -1,4 +1,7 @@
+import os
 import argparse
+import matplotlib.pyplot as plt
+import pickle as pkl
 
 class EarlyStopping():
   # source: https://debuggercafe.com/using-learning-rate-scheduler-and-early-stopping-with-pytorch/
@@ -21,6 +24,26 @@ class EarlyStopping():
               print('INFO: Early stopping')
               self.early_stop = True
       return self.early_stop
+
+def plot_losses(dir, train_losses, valid_losses):
+    if not os.path.exists(dir):
+        os.mkdir(dir)
+
+    x = list(range(len(train_losses)))
+    plt.plot(x, train_losses, label='train loss')
+    plt.plot(x, valid_losses, label='valid loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.savefig(os.path.join(dir, 'losses.png'))
+    plt.close()
+
+    losses = {
+        'train_losses': train_losses,
+        'valid_losses': valid_losses
+    }
+    with open(os.path.join(dir, 'losses_log'), 'wb') as handle:
+        pkl.dump(losses, handle, protocol=pkl.HIGHEST_PROTOCOL)
+
 
 
 def parse_args():

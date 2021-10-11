@@ -7,7 +7,7 @@ from models.query_encoder.bert import BertEncoder
 from models.query_decoder.lstm import LSTMDecoder
 from datasets.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
-from utils import parse_args, EarlyStopping
+from utils import parse_args, EarlyStopping, plot_losses
 from eval import ids_to_string
 
 SOS_TOKEN = 101
@@ -125,6 +125,8 @@ def train(args):
     
     if(args.teacher_forcing): print('Using teacher forcing for training...')
 
+    train_losses, valid_losses = [], []
+
     for epoch in range(args.epochs):
         print('Training epoch: ', epoch)
         bert.train(); decoder.train()
@@ -138,15 +140,22 @@ def train(args):
             train_loss = train_step(input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
-            print('Batch loss: ', train_loss)
+            print(f'Batch {i}/{len(train_dataloader)} loss: {train_loss}')
         
         epoch_loss = sum_loss/i
-        print("Epoch loss: ", epoch_loss)
+        print(f"Epoch {epoch} loss: {epoch_loss}")
         print("="*80)
 
-        evaluation(bert, decoder, loss_fn, valid_dataloader)
+        valid_loss = evaluation(bert, decoder, loss_fn, valid_dataloader)
+
+        train_losses.append(epoch_loss)
+        valid_losses.append(valid_loss)
+        plot_losses(args.log_dir, train_losses, valid_losses)
+
         if early_stopping(epoch_loss):
             break
+
+
     
     print('Training completed. Saving the model...')
     torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
@@ -218,17 +227,21 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
 
     total_generated = []; total_expected = []; total_dbid = []
 
+    valid_losses = []
+
     for i, batch in enumerate(valid_dataloader):
         input_ids, attention_masks, labels, db_id = batch
         input_ids, attention_masks, labels = input_ids.to(device), \
             attention_masks.to(device), labels.to(device)
         
-        train_loss, generated, expected = valid_step(input_ids, attention_masks, labels, 
+        valid_loss, generated, expected = valid_step(input_ids, attention_masks, labels, 
                 loss_fn, bert, decoder, device)
-        print('Batch loss: ', train_loss)
+        print('Batch loss: ', valid_loss)
         total_generated.append(generated); total_expected.append(expected); total_dbid.append(db_id)
-
+        valid_losses.append(valid_loss)
     create_csv(total_generated, total_expected, total_dbid)
+
+    return np.mean(valid_losses)
 
 def create_csv(generated, expected, dbid):
 
