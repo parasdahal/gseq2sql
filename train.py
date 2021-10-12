@@ -19,14 +19,14 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.enable = False
 
-def train_step(input, attention_masks, target, loss_fn, bert, decoder, 
+def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dataset_size,
                bert_optimizer, decoder_optimizer,teacher_forcing, device, verbose=False):
     
-    bert_optimizer.zero_grad();
-    decoder_optimizer.zero_grad();
     
     bert_outputs = bert(input, attention_masks)
     batch_size, hidden_dim = bert_outputs.size()
+
+    accum_iter = args.effective_batch_size / args.batch_size
     #target_size = target.size(0)
     
     batch_outputs = []; batch_expected = []
@@ -79,11 +79,17 @@ def train_step(input, attention_masks, target, loss_fn, bert, decoder,
             print('Expected: ', exp)
             print('Generated: ', gen)
         print('-'*80)
-    
+    loss = loss / accum_iter
     loss.backward()
-    bert_optimizer.step()
-    decoder_optimizer.step()
-    return loss.item() / batch_size
+
+    if ((iter + 1) % accum_iter == 0) or (iter + 1 == dataset_size):
+        print('optimize model')
+        bert_optimizer.step()
+        decoder_optimizer.step()
+        bert_optimizer.zero_grad();
+        decoder_optimizer.zero_grad();
+
+    return loss.item() / batch_size * accum_iter
     
 
 def train(args):
@@ -137,8 +143,9 @@ def train(args):
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
             
-            train_loss = train_step(input_ids, attention_masks, labels, 
-                    loss_fn, bert, decoder, bert_optimizer, decoder_optimizer, args.teacher_forcing, device, args.verbose)
+            train_loss = train_step(i, input_ids, attention_masks, labels, 
+                    loss_fn, bert, decoder, len(train_dataloader), bert_optimizer, decoder_optimizer, 
+                    args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
             print(f'Batch {i}/{len(train_dataloader)} loss: {train_loss}')
         

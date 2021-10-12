@@ -59,7 +59,7 @@ def parse_args():
                       type=int,
                       help='Size of the vocabulary')
   parser.add_argument('--teacher_forcing',
-                      default=False,
+                      default=True,
                       type=bool,
                       help='Use teacher forcing training')
   # Dataset hyperparameters
@@ -68,7 +68,7 @@ def parse_args():
                       type=str,
                       help='Path to the spider dataset')
   parser.add_argument('--use_schema',
-                      default=False,
+                      default=True,
                       type=bool,
                       help='Add schema information to the input questions.')
   # Optimizer hyperparameters
@@ -77,7 +77,11 @@ def parse_args():
                       type=float,
                       help='Learning rate to use')
   parser.add_argument('--batch_size',
-                      default=64,
+                      default=4,
+                      type=int,
+                      help='Minibatch size')
+  parser.add_argument('--effective_batch_size',
+                      default=128,
                       type=int,
                       help='Minibatch size')
   # Other hyperparameters
