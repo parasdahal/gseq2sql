@@ -6,6 +6,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn.utils.rnn import pad_sequence
+import os
+import csv
+import sqlite3
 
 dataset_path = './data/spider'
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -18,10 +21,13 @@ def summarize_query_results(csv_fname):
     exact_match_acc = eval_exact_match_accuracy(csv_fname)
     set_match_acc = eval_set_match_accuracy(csv_fname)
     sim_score = eval_query_similarity(csv_fname)
+    execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
 
     print(f'Exact Match Accuracy: {exact_match_acc}')
     print(f'Exact Set Match Accuracy: {set_match_acc}')
     print(f'Average Levenshtein similarity: {sim_score}')
+    print(f'Execution success: {execution_success}')
+    print(f'Execution accuracy: {execution_accuracy}')
 
     return exact_match_acc, set_match_acc, sim_score
 
@@ -130,6 +136,33 @@ def eval_set_match_accuracy(csv_fname, split='validation'):
     # Return the average set match accuracy
     avg_set_match_accuracy = np.mean(set_accuracies)
     return avg_set_match_accuracy
+
+def eval_execution_accuracy(csv_fname):
+    total = 0
+    fails = 0
+    accurate = 0
+
+    with open(csv_fname) as f:
+        reader = csv.reader(f)
+        for row in reader:
+            total += 1
+            db_file = os.path.join(dataset_path, 'database', row[2], f'{row[2]}.sqlite')
+            con = sqlite3.connect(db_file)
+            cur = con.cursor()
+            cur.execute(row[4])
+            target = cur.fetchall()[0]
+            try:
+                cur.execute(row[3])
+                pred = cur.fetchall()[0]
+                if target == pred:
+                    accurate += 1
+            except:
+                fails += 1
+
+    execution_success = (total-fails)/total
+    execution_accuracy = accurate/total
+
+    return execution_success, execution_accuracy
 
 # Helper function which uses tokenizer to convert ids to strings
 def ids_to_string(ids):
