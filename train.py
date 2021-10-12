@@ -111,7 +111,7 @@ def train(args):
     args.vocab_size = train_dataset.get_vocab_size()
     early_stopping = EarlyStopping()
 
-    bert = BertEncoder()
+    bert = BertEncoder(args.vocab_size)
     decoder = LSTMDecoder(hidden_size=args.hidden_dim, output_size=args.vocab_size)
     
     bert = bert.to(device)

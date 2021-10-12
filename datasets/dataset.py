@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from collections import defaultdict
 import itertools
+from datasets.schema_info import SchemaInfo
 
 from transformers import BertTokenizer
 
@@ -26,6 +27,14 @@ class SpiderDataset(Dataset):
         self.dbs.append(item['db_id'])
 
     if use_schema:
+      # Read schema information from table.json
+      self.schema_info = SchemaInfo(os.path.join(self.dataset_path, 'tables.json'))
+      self.tokenizer.add_tokens(['[T]', '[C]'])
+      added_tokens = self.tokenizer.add_tokens(self.schema_info.get_tokens())
+      self.num_added_tokens = added_tokens
+      print(f'Added {added_tokens} schema tokens to vocabulary')
+
+      # Add schema info to questions
       questions = self.add_schema_info(questions)
 
     # Tokenize questions and queries
@@ -36,53 +45,11 @@ class SpiderDataset(Dataset):
     self.queries = tokenized_queries['input_ids']
 
   def get_vocab_size(self):
-    return self.tokenizer.vocab_size
+    return len(self.tokenizer)
 
   def add_schema_info(self, questions):
-    # Read schema information from table.json
-    self.schema_info = {}
-    with open(os.path.join(self.dataset_path, 'tables.json')) as f:
-      data = json.load(f)
-      for item in data:
-        db_schema = defaultdict(list)
-        table_names = item['table_names']
-        column_names = item['column_names']
-        for column_inf in column_names:
-          table_idx = column_inf[0]
-          if table_idx < 0:
-            continue
-          table_name, column_name = table_names[table_idx], column_inf[1]
-          db_schema[table_name].append(column_name)
-        self.schema_info[item['db_id']] = db_schema
-
-    # Add domain-specific tokens (aka schema) to the tokenizer
-    # Get schema tables and columns
-    schema_tokens = [(db_table, [db_column for db_column in db_columns]) 
-                      for db_id, db_tables in self.schema_info.items() 
-                        for db_table, db_columns in db_tables.items()]
-    schema_tables, schema_columns = zip(*schema_tokens)
-    schema_columns = list(itertools.chain.from_iterable(schema_columns))
-    
-    # Add these to our vocabulary in the tokenizer
-    num_added_tables = self.tokenizer.add_tokens(schema_tables)
-    num_added_columns = self.tokenizer.add_tokens(schema_columns)
-    print(f'Added {num_added_tables}/{len(schema_tables)} table names to vocabulary')
-    print(f'Added {num_added_columns}/{len(schema_columns)} column names to vocabulary')
-
-    # Order schema info for each db such that [T1, C1, C2 ..., T2, C1, C2, ...]
-    # for each database
-    tokenized_schema = {}
-    for db_id, tables in self.schema_info.items():
-      db_tokens = []
-      for table_name, column_names in tables.items():
-        db_tokens.append(table_name)
-        db_tokens += column_names
-      tokenized_schema[db_id] = ' '.join(db_tokens)
-
     # Append correct schema to each question
-    questions = [question + ' ' + tokenized_schema[self.dbs[i]] for i, question in enumerate(questions)]
-
-    return questions
+    return [question + ' ' + self.schema_info.get_schema_string(self.dbs[i]) for i, question in enumerate(questions)]
 
   def __len__(self):
     return len(self.input_ids)
