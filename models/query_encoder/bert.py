@@ -2,11 +2,12 @@ from transformers import BertModel
 import torch.nn as nn
 
 class BertEncoder(nn.Module):
-    def __init__(self):
+    def __init__(self, vocab_size):
         super(BertEncoder, self).__init__()
         self.bert = BertModel.from_pretrained(
             "bert-base-uncased" # TODO: discuss which type we need
         )
+        self.bert.resize_token_embeddings(vocab_size)
 
     def forward(self, input_ids, attention_masks):
         outputs = self.bert(input_ids=input_ids, 

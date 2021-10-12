@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from collections import defaultdict
 import itertools
-from schema_info import SchemaInfo
+from datasets.schema_info import SchemaInfo
 
 from transformers import BertTokenizer
 
@@ -30,7 +30,9 @@ class SpiderDataset(Dataset):
       # Read schema information from table.json
       self.schema_info = SchemaInfo(os.path.join(self.dataset_path, 'tables.json'))
       self.tokenizer.add_tokens(['[T]', '[C]'])
-      self.tokenizer.add_tokens(self.schema_info.get_tokens())
+      added_tokens = self.tokenizer.add_tokens(self.schema_info.get_tokens())
+      self.num_added_tokens = added_tokens
+      print(f'Added {added_tokens} schema tokens to vocabulary')
 
       # Add schema info to questions
       questions = self.add_schema_info(questions)
@@ -43,7 +45,7 @@ class SpiderDataset(Dataset):
     self.queries = tokenized_queries['input_ids']
 
   def get_vocab_size(self):
-    return self.tokenizer.vocab_size
+    return len(self.tokenizer)
 
   def add_schema_info(self, questions):
     # Append correct schema to each question
