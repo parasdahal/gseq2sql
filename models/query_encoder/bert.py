@@ -17,4 +17,4 @@ class BertEncoder(nn.Module):
         # As done in https://skimai.com/fine-tuning-bert-for-sentiment-analysis/
         last_hidden_state_cls = outputs[0][:, 0, :]
 
-        return last_hidden_state_cls
+        return last_hidden_state_cls, outputs[0]
