@@ -11,9 +11,12 @@ class Attention(nn.Module):
     self.attn_combine = nn.Linear(hidden_size * 2, hidden_size)
     
   def forward(self, embedded, hidden, encoder_outputs):
+    
     attn_weights = F.softmax(
-    self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
-    attn_applied = torch.bmm(attn_weights.unsqueeze(0),
+    self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1).unsqueeze(0)
+    # print('attn wt', attn_weights.size())
+    # print('bert ops ', encoder_outputs.size())
+    attn_applied = torch.bmm(attn_weights,
                               encoder_outputs.unsqueeze(0))
 
     output = torch.cat((embedded[0], attn_applied[0]), 1)
@@ -21,7 +24,7 @@ class Attention(nn.Module):
     return output, attn_weights
     
 class LSTMDecoder(nn.Module):
-  def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=500,
+  def __init__(self, hidden_size, output_size, dropout_p=0.1, max_length=512,
                use_attention=False, bidirectional=False, num_layers=1):
     super(LSTMDecoder, self).__init__()
     self.hidden_size = hidden_size
@@ -41,7 +44,10 @@ class LSTMDecoder(nn.Module):
     output = self.dropout(embedded)
     
     if self.use_attention:
-      output, attn_weights = self.attention(output, hidden, encoder_outputs);
+      # print(output.size())
+      # print(hidden[0].size())
+      # print(encoder_outputs.size())
+      output, attn_weights = self.attention(output, hidden[0], encoder_outputs);
     
     output = F.relu(output)
     # print(hidden.size(), output.size())

@@ -62,6 +62,10 @@ def parse_args():
                       default=True,
                       type=bool,
                       help='Use teacher forcing training')
+  parser.add_argument('--use_attention',
+                      default=True,
+                      type=bool,
+                      help='Use attention in decoder')
   # Dataset hyperparameters
   parser.add_argument('--dataset_path',
                       default='./data/spider',
