@@ -167,7 +167,7 @@ def train(args):
 
     
     print('Training completed. Saving the model...')
-    if not os.path.exists('./checkpoins/'):
+    if not os.path.exists('./checkpoints/'):
         os.mkdir('./checkpoints/')
     torch.save(bert.state_dict(), './checkpoints/bert-state-dict.pth')
     torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict.pth')
