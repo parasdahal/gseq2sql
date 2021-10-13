@@ -26,7 +26,7 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
     
     
     bert_outputs = bert(input, attention_masks)
-    batch_size, hidden_dim = bert_outputs.size()
+    batch_size_, hidden_dim = bert_outputs.size()
 
     accum_iter = effective_batch_size / batch_size
     #target_size = target.size(0)
@@ -35,7 +35,7 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
     
     loss = 0
     # Iterate over samples in the batch.
-    for batch_i in range(batch_size):
+    for batch_i in range(batch_size_):
         # Size = [1, 1]
         decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
         # Size = [1, 1, hidden_dim]
