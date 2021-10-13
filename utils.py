@@ -72,7 +72,7 @@ def parse_args():
                       type=str,
                       help='Path to the spider dataset')
   parser.add_argument('--use_schema',
-                      default=True,
+                      default=False,
                       type=bool,
                       help='Add schema information to the input questions.')
   # Optimizer hyperparameters
