@@ -1,3 +1,4 @@
+from pathlib import Path
 from datasets.dataset import SpiderDataset
 from datasets.schema_info import SchemaInfo
 from transformers import BertTokenizer
@@ -11,7 +12,7 @@ import os
 import csv
 import sqlite3
 
-dataset_path = './data/spider'
+dataset_path = os.path.join(Path(__file__).parent.absolute(), './data/spider')
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 # Add schema tokens to tokenizer
