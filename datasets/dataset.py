@@ -26,8 +26,8 @@ class SpiderDataset(Dataset):
       questions = self.add_schema_info(questions)
 
     # Tokenize questions and queries
-    tokenized_questions = self.tokenizer(questions, truncation=True, padding=True, add_special_tokens=True)
-    tokenized_queries = self.tokenizer(queries, truncation=True, padding=True, add_special_tokens=True)
+    tokenized_questions = self.tokenizer(questions, truncation=True, padding="max_length", add_special_tokens=True)
+    tokenized_queries = self.tokenizer(queries, truncation=True, padding="max_length", add_special_tokens=True)
     self.input_ids = tokenized_questions['input_ids']
     self.att_mask = tokenized_questions['attention_mask']
     self.queries = tokenized_queries['input_ids']
