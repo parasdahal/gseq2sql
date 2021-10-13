@@ -11,6 +11,7 @@ class Attention(nn.Module):
     self.attn_combine = nn.Linear(hidden_size * 2, hidden_size)
     
   def forward(self, embedded, hidden, encoder_outputs):
+    
     attn_weights = F.softmax(
     self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
     attn_applied = torch.bmm(attn_weights.unsqueeze(0),
@@ -41,6 +42,7 @@ class LSTMDecoder(nn.Module):
     output = self.dropout(embedded)
     
     if self.use_attention:
+      print(embedded.size(), hidden.size(), encoder_outputs.size())
       output, attn_weights = self.attention(output, hidden, encoder_outputs);
     
     output = F.relu(output)

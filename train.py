@@ -25,7 +25,7 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
                teacher_forcing, device, verbose=False):
     
     
-    bert_outputs = bert(input, attention_masks)
+    bert_outputs, bert_all = bert(input, attention_masks)
     batch_size_, hidden_dim = bert_outputs.size()
 
     accum_iter = effective_batch_size / batch_size
@@ -54,7 +54,7 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
         loss_ = 0; gen_output = []; expected_output= []
         for target_i in range(target_size):
             decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden, bert_outputs)
+                decoder_input, decoder_hidden, bert_all)
             expected_target = torch.tensor([target[batch_i][target_i]], device=device)
             _, vocab_id = decoder_output.topk(1)
             if not teacher_forcing:
