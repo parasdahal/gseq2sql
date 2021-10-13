@@ -161,7 +161,7 @@ def train(args):
         valid_losses.append(valid_loss)
         plot_losses(args.log_dir, train_losses, valid_losses)
 
-        if early_stopping(epoch_loss):
+        if early_stopping(valid_loss):
             break
 
 

@@ -10,6 +10,7 @@ class BertEncoder(nn.Module):
         self.bert.resize_token_embeddings(vocab_size)
 
     def forward(self, input_ids, attention_masks):
+        # import pdb; pdb.set_trace()
         outputs = self.bert(input_ids=input_ids, 
                             attention_mask=attention_masks)
 
