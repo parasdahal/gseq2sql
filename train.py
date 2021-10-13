@@ -178,7 +178,7 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
     batch_outputs = []; batch_expected = []
 
     with torch.no_grad():
-        bert_outputs = bert(input, attention_masks)
+        bert_outputs, bert_all = bert(input, attention_masks)
         batch_size, hidden_dim = bert_outputs.size()
         #target_size = target.size(0)
     
@@ -188,7 +188,7 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
             decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
             # Size = [1, 1, hidden_dim]
             h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
-            c0 = torch.zeros(1, 1, hidden_dim).to(device)
+            c0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
         
             decoder_hidden = (h0, c0)
 
@@ -201,8 +201,8 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
             loss_ = 0; gen_output = []; expected_output= []
             for target_i in range(target_size):
 
-                decoder_output, decoder_hidden = decoder(
-                    decoder_input, decoder_hidden, bert_outputs)
+                decoder_output, decoder_hidden, attn_weights = decoder(
+                    decoder_input, decoder_hidden, bert_all[batch_i])
                 
                 _, vocab_id = decoder_output.topk(1)
                 
