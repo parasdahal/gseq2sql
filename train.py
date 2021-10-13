@@ -106,7 +106,7 @@ def train(args):
     
     # Setup data_loader instances.
     train_dataset, valid_dataset = create_splits(args.dataset_path, ['train_spider.json', 'dev.json'], use_schema=args.use_schema, seed=args.seed)
-
+    
     train_dataloader = DataLoader(train_dataset,
                         sampler=RandomSampler(train_dataset),
                         batch_size=args.batch_size)

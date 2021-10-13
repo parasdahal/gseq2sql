@@ -48,13 +48,12 @@ class LSTMDecoder(nn.Module):
       # print(hidden[0].size())
       # print(encoder_outputs.size())
       output, attn_weights = self.attention(output, hidden[0], encoder_outputs);
-    
+
     output = F.relu(output)
     # print(hidden.size(), output.size())
     output, hidden = self.rnn(output, hidden)
 
     output = F.log_softmax(self.out(output[0]), dim=1)
-    
     if self.use_attention : return output, hidden, attn_weights
     return output, hidden
 

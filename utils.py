@@ -68,11 +68,11 @@ def parse_args():
                       help='Use attention in decoder')
   # Dataset hyperparameters
   parser.add_argument('--dataset_path',
-                      default='./data/spider',
+                      default='./datasets/spider',
                       type=str,
                       help='Path to the spider dataset')
   parser.add_argument('--use_schema',
-                      default=True,
+                      default=False,
                       type=bool,
                       help='Add schema information to the input questions.')
   # Optimizer hyperparameters
@@ -104,7 +104,7 @@ def parse_args():
                       help='Progress bar refresh rate')
   parser.add_argument('--log_dir', default='./logs', type=str)
   parser.add_argument('--verbose',
-                      default=False,
+                      default=True,
                       type=bool,
                       help='Generate 10 samples of output and target after each batch.')
   return parser.parse_args()
