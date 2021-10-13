@@ -53,8 +53,8 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
         # Generate token and compute loss in each timestep.
         loss_ = 0; gen_output = []; expected_output= []
         for target_i in range(target_size):
-            decoder_output, decoder_hidden = decoder(
-                decoder_input, decoder_hidden, bert_all)
+            decoder_output, decoder_hidden, attn_weights = decoder(
+                decoder_input, decoder_hidden, bert_all[batch_i])
             expected_target = torch.tensor([target[batch_i][target_i]], device=device)
             _, vocab_id = decoder_output.topk(1)
             if not teacher_forcing:
