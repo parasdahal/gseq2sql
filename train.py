@@ -9,6 +9,7 @@ from datasets.dataset import SpiderDataset
 from torch.utils.data import DataLoader, RandomSampler
 from utils import parse_args, EarlyStopping, plot_losses
 from eval import ids_to_string
+import os
 
 SOS_TOKEN = 101
 EOS_TOKEN = 102
@@ -165,8 +166,10 @@ def train(args):
 
     
     print('Training completed. Saving the model...')
-    torch.save(bert.state_dict(), './checkpoints/bert-state-dict')
-    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict')
+    if not os.path.exists('./checkpoins/'):
+        os.mkdir('./checkpoints/')
+    torch.save(bert.state_dict(), './checkpoints/bert-state-dict.pth')
+    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict.pth')
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
