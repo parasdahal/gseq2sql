@@ -5,7 +5,7 @@ from torch.optim import Adam
 from torch.utils.data.sampler import RandomSampler
 from models.query_encoder.bert import BertEncoder
 from models.query_decoder.lstm import LSTMDecoder
-from datasets.dataset import SpiderDataset
+from datasets.dataset import create_splits
 from torch.utils.data import DataLoader, RandomSampler
 from utils import parse_args, EarlyStopping, plot_losses
 from eval import ids_to_string
@@ -105,16 +105,14 @@ def train(args):
         device = torch.device("cpu")
     
     # Setup data_loader instances.
-    train_dataset = SpiderDataset(args.dataset_path,'train_spider.json', use_schema=args.use_schema)
-    valid_dataset = SpiderDataset(args.dataset_path,'dev.json', use_schema=args.use_schema)
-    # train_dataset, valid_dataset = random_split(dataset, [0.8, 0.2])
+    train_dataset, valid_dataset = create_splits(args.dataset_path, ['train_spider.json', 'dev.json'], use_schema=args.use_schema, seed=args.seed)
 
     train_dataloader = DataLoader(train_dataset,
                         sampler=RandomSampler(train_dataset),
-                        batch_size=args.batch_size) # TODO change batch size?
+                        batch_size=args.batch_size)
     valid_dataloader = DataLoader(valid_dataset,
                         sampler=RandomSampler(valid_dataset),
-                        batch_size=args.batch_size) 
+                        batch_size=args.batch_size)
 
     args.vocab_size = train_dataset.get_vocab_size()
     early_stopping = EarlyStopping()

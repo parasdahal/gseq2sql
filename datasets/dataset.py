@@ -2,33 +2,21 @@ import os
 import json
 import torch
 from torch.utils.data import Dataset, DataLoader
-from collections import defaultdict
-import itertools
+from sklearn.model_selection import train_test_split
 from datasets.schema_info import SchemaInfo
 
 from transformers import BertTokenizer
 
 class SpiderDataset(Dataset):
 
-  def __init__(self, dataset_path, json_file, use_schema=False):
-    self.dataset_path = dataset_path
+  def __init__(self, questions, queries, dbs, schema_file=None):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
-    # Read questions, queries and db_ids from the train/dev json file
-    questions = []
-    queries = []
-    self.dbs = []
-    
-    with open(os.path.join(dataset_path, json_file)) as f:
-      data = json.load(f)
-      for item in data:
-        questions.append(item['question'])
-        queries.append(item['query'])
-        self.dbs.append(item['db_id'])
+    self.dbs = dbs
 
-    if use_schema:
+    if schema_file:
       # Read schema information from table.json
-      self.schema_info = SchemaInfo(os.path.join(self.dataset_path, 'tables.json'))
+      self.schema_info = SchemaInfo(schema_file)
       self.tokenizer.add_tokens(['[T]', '[C]'])
       added_tokens = self.tokenizer.add_tokens(self.schema_info.get_tokens())
       self.num_added_tokens = added_tokens
@@ -62,7 +50,37 @@ def create_dataloader(dataset_path, json_file, batch_size=1):
   dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
   return dataloader
 
-# train_dataloader = create_dataloader('spider/train_spider.json')
-# train_dataset = SpiderDataset('./datasets/spider', 'train_spider.json')
+def create_splits(dataset_path, json_files, seed=None, use_schema=False):
+  questions = []
+  queries = []
+  dbs = []
 
-# train_dataset.__getitem__(0)
+  if type(json_files) is str:
+    json_files = [json_files]
+
+  for json_file in json_files:
+    with open(os.path.join(dataset_path, json_file)) as f:
+      data = json.load(f)
+      for item in data:
+        questions.append(item['question'])
+        queries.append(item['query'])
+        dbs.append(item['db_id'])
+
+  train_questions, val_questions, train_queries, val_queries, train_dbs, val_dbs = train_test_split(questions, queries, dbs, test_size=0.2, random_state=seed, stratify=dbs)
+
+  if use_schema:
+    schema_file = os.path.join(dataset_path, 'tables.json')
+  else:
+    schema_file = None
+
+  train_dataset = SpiderDataset(train_questions, train_queries, train_dbs, schema_file=schema_file)
+  val_dataset = SpiderDataset(val_questions, val_queries, val_dbs, schema_file=schema_file)
+
+  return train_dataset, val_dataset
+
+if __name__ == '__main__':
+  # test
+  train_dataset, val_dataset = create_splits('./data/spider', ['train_spider.json', 'dev.json'])
+  print(len(train_dataset), len(val_dataset))
+
+
