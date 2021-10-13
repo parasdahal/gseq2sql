@@ -1,5 +1,4 @@
 from pathlib import Path
-from datasets.dataset import SpiderDataset
 from datasets.schema_info import SchemaInfo
 from transformers import BertTokenizer
 import pandas as pd
@@ -202,16 +201,6 @@ def save_string_csv(csv_fname):
     df = pd.DataFrame(query_strings)
     df.to_csv('queries_as_strings.csv')
 
-
-# Only for testing before having access to actual decoder output CSVs
-# Loads the validation set ids into a csv
-def dump_test_csv():
-    valid_dataset = SpiderDataset(dataset_path,'dev.json')
-    queries_ids = valid_dataset.queries
-    queries_ids = [[str(id) for id in query] for query in queries_ids]
-    queries_ids = [" ".join(query) for query in queries_ids]
-    df = pd.DataFrame(queries_ids)
-    df.to_csv('dev_ids.csv')
 
 # summarize_query_results('outputs (10).csv')
 # save_string_csv('outputs (10).csv')
