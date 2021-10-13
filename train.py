@@ -21,13 +21,14 @@ torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.enable = False
 
 def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dataset_size,
-               bert_optimizer, decoder_optimizer,teacher_forcing, device, verbose=False):
+               bert_optimizer, decoder_optimizer, batch_size, effective_batch_size,
+               teacher_forcing, device, verbose=False):
     
     
     bert_outputs = bert(input, attention_masks)
     batch_size, hidden_dim = bert_outputs.size()
 
-    accum_iter = args.effective_batch_size / args.batch_size
+    accum_iter = effective_batch_size / batch_size
     #target_size = target.size(0)
     
     batch_outputs = []; batch_expected = []
@@ -146,7 +147,7 @@ def train(args):
             
             train_loss = train_step(i, input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, len(train_dataloader), bert_optimizer, decoder_optimizer, 
-                    args.teacher_forcing, device, args.verbose)
+                    args.batch_size, args.effective_batch_size, args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
             print(f'Batch {i}/{len(train_dataloader)} loss: {train_loss}')
         
