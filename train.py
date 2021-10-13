@@ -14,12 +14,6 @@ import os
 SOS_TOKEN = 101
 EOS_TOKEN = 102
 
-torch.manual_seed(42)
-np.random.seed(42)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.enable = False
-
 def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dataset_size,
                bert_optimizer, decoder_optimizer, batch_size, effective_batch_size,
                teacher_forcing, device, verbose=False):
@@ -95,6 +89,12 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
     
 
 def train(args):
+    
+    torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.enable = False
     
     if torch.cuda.is_available():
         device = torch.device("cuda")
