@@ -267,7 +267,7 @@ def create_csv(generated, expected, dbid, original_queries):
 
     generated_strings = [[ids_to_string(id) for id in batch] for batch in generated]
     expected_strings = original_queries
-    expected = [[[id for id in label if id != 0] for label in batch] for batch in expected]
+    expected = [[[id.item() for id in label if id.item() != 0] for label in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
     with open('outputs.csv', 'w', newline='') as csv_file:
