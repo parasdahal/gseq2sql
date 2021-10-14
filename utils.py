@@ -44,7 +44,12 @@ def plot_losses(dir, train_losses, valid_losses):
     with open(os.path.join(dir, 'losses_log'), 'wb') as handle:
         pkl.dump(losses, handle, protocol=pkl.HIGHEST_PROTOCOL)
 
-
+def t_or_f(arg):
+    ua = str(arg).upper()
+    if 'TRUE'.startswith(ua):
+       return True
+    elif 'FALSE'.startswith(ua):
+       return False
 
 def parse_args():
   parser = argparse.ArgumentParser(
@@ -60,11 +65,11 @@ def parse_args():
                       help='Size of the vocabulary')
   parser.add_argument('--teacher_forcing',
                       default=True,
-                      type=bool,
+                      type=t_or_f,
                       help='Use teacher forcing training')
   parser.add_argument('--use_attention',
                       default=True,
-                      type=bool,
+                      type=t_or_f,
                       help='Use attention in decoder')
   # Dataset hyperparameters
   parser.add_argument('--dataset_path',
@@ -73,7 +78,7 @@ def parse_args():
                       help='Path to the spider dataset')
   parser.add_argument('--use_schema',
                       default=False,
-                      type=bool,
+                      type=t_or_f,
                       help='Add schema information to the input questions.')
   # Optimizer hyperparameters
   parser.add_argument('--lr',
@@ -105,6 +110,6 @@ def parse_args():
   parser.add_argument('--log_dir', default='./logs', type=str)
   parser.add_argument('--verbose',
                       default=False,
-                      type=bool,
+                      type=t_or_f,
                       help='Generate 10 samples of output and target after each batch.')
   return parser.parse_args()
