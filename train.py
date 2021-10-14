@@ -266,7 +266,7 @@ def create_csv(generated, expected, dbid, original_queries):
       pickle.dump(dbid, f)
 
     generated_strings = [[ids_to_string(id) for id in batch] for batch in generated]
-    expected_strings = [[query for query in queries] for queries in original_queries]
+    expected_strings = original_queries
     expected = [[[id for id in label if id != 0] for label in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
