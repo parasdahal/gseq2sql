@@ -2,6 +2,7 @@ datasets/spider
 data/spider
 checkpoints/
 checkpoints-kevin/
+heatmaps_creation.py
 expected.pkl
 generated.pkl
 dbid.pkl

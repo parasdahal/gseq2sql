@@ -32,15 +32,34 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
     bert.eval()
     decoder.eval()
 
-    batch_outputs = []; batch_expected = []
-
+    
     bert_outputs, bert_all = bert(input, attention_masks)
     batch_size_, hidden_dim = bert_outputs.size()
 
-    import pdb; pdb.set_trace()
-    generate_heatmap(ids_to_string(myinput), attn_weights[0][0], "latex"+str(batch_i)+".tex")
-
+    accum_iter = effective_batch_size / batch_size
+    #target_size = target.size(0)
+    
+    batch_outputs = []; batch_expected = []
+    
+    loss = 0
+    # Iterate over samples in the batch.
     for batch_i in range(4):
+        # Size = [1, 1]
+        decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
+        # Size = [1, 1, hidden_dim]
+        h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
+        # c0 = torch.zeros(1, 1, hidden_dim).to(device)
+        c0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
+        
+        decoder_hidden = (h0, c0)
+
+        try:
+            target_size = list(target[batch_i]).index(0)
+        except:
+            target_size = target[batch_i].size(0)
+        
+        # Generate token and compute loss in each timestep.
+        loss_ = 0; gen_output = []; expected_output= []
         for target_i in range(target_size):
             decoder_output, decoder_hidden, attn_weights = decoder(
                 decoder_input, decoder_hidden, bert_all[batch_i])
@@ -51,36 +70,53 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
                 decoder_input = vocab_id.squeeze().detach()
             else:
                 decoder_input = expected_target
-            #loss_ += loss_fn(decoder_output, expected_target)
+            loss_ += loss_fn(decoder_output, expected_target)
             
             gen_output.append(vocab_id.item())
             expected_output.append(expected_target.item())
             
             if decoder_input.item() == EOS_TOKEN:
                 break
-
         loss += loss_ / target_size
         
         if verbose and batch_i < 5:
             batch_outputs.append(ids_to_string(gen_output))
             batch_expected.append(ids_to_string(expected_output))
+    
+        import pdb; pdb.set_trace()
+        inputtokens = input[batch_i]
+        inputstr = ids_to_string(inputtokens)
+        targettokens = target[batch_i]
+        targetstr = ids_to_string(targettokens)
+        predictedtokens = expected_output
+        predictedstr = ids_to_string(predictedtokens)
 
-        myinput = input[batch_i]; mytarget = target[batch_i]
-        try:
-            idx0 = np.where(np.asarray(mytarget) == 0)[0][0] # the index where zero padding starts
-            mytarget = mytarget[:(idx0)]
-            idx = targets.numpy().index(mytarget)
-        except:
-            import pdb; pdb.set_trace()
-
-        mygeneratedstr = generated_str[idx]; mytargetstr = targets_str[idx]
-        similarity = Levenshtein.distance(mytargetstr, mygeneratedstr)
-
-        if similarity > 0.5:
-
-
+        similarity = Levenshtein.distance(targetstr, predictedstr)
+        tokenized_input = inputstr.split()
+        lenn = len(tokenized_input)
+        generate_heatmap(tokenized_input, attn_weights[0][0].tolist()[:lenn], "latex"+str(batch_i)+".tex")
+        continue
 
     import sys; sys.exit(0)
+
+    # Print generated and expected strings.
+    if verbose:
+        for gen, exp in zip(batch_outputs,batch_expected):
+            print('-'*80)
+            print('Expected: ', exp)
+            print('Generated: ', gen)
+        print('-'*80)
+    loss = loss / accum_iter
+    loss.backward()
+
+    if ((iter + 1) % accum_iter == 0) or (iter + 1 == dataset_size):
+        print('optimize model')
+        bert_optimizer.step()
+        decoder_optimizer.step()
+        bert_optimizer.zero_grad();
+        decoder_optimizer.zero_grad();
+
+    return loss.item() / batch_size * accum_iter
     
 
 def train(args):
@@ -139,7 +175,7 @@ def train(args):
             input_ids, attention_masks, labels, db_id, or_queries = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
-
+            
             train_loss = train_step(i, input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, len(train_dataloader), bert_optimizer, decoder_optimizer, 
                     args.batch_size, args.effective_batch_size, args.teacher_forcing, device, args.verbose)
