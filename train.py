@@ -147,7 +147,7 @@ def train(args):
 
         sum_loss = 0
         for i, batch in enumerate(train_dataloader):
-            input_ids, attention_masks, labels, db_id = batch
+            input_ids, attention_masks, labels, _, _ = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
             
@@ -180,10 +180,13 @@ def train(args):
 
     
     print('Training completed. Saving the model...')
-    if not os.path.exists('./checkpoints/'):
-        os.mkdir('./checkpoints/')
-    torch.save(bert.state_dict(), './checkpoints/bert-state-dict.pth')
-    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict.pth')
+    checkpoint_dir = os.path.join(args.log_dir, 'checkpoints')
+    if not os.path.exists(args.log_dir):
+        os.mkdir(args.log_dir)
+    if not os.path.exists(checkpoint_dir):
+        os.mkdir(checkpoint_dir)
+    torch.save(bert.state_dict(), os.path.join(checkpoint_dir, 'bert-state-dict.pth'))
+    torch.save(decoder.state_dict(), os.path.join(checkpoint_dir, 'decoder-state-dict.pth'))
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
@@ -250,24 +253,26 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
     bert.eval(); decoder.eval()
 
     total_generated = []; total_expected = []; total_dbid = []
+    total_original_queries = []
 
     valid_losses = []
 
     for i, batch in enumerate(valid_dataloader):
-        input_ids, attention_masks, labels, db_id = batch
+        input_ids, attention_masks, labels, db_id, original_queries = batch
         input_ids, attention_masks, labels = input_ids.to(device), \
             attention_masks.to(device), labels.to(device)
         
         valid_loss, generated, expected = valid_step(input_ids, attention_masks, labels, 
                 loss_fn, bert, decoder, device)
         print('Batch loss: ', valid_loss)
-        total_generated.append(generated); total_expected.append(expected); total_dbid.append(db_id)
+        total_generated.append(generated); total_expected.append(labels); total_dbid.append(db_id)
+        total_original_queries.append(original_queries)
         valid_losses.append(valid_loss)
-    create_csv(total_generated, total_expected, total_dbid)
+    create_csv(total_generated, total_expected, total_dbid, total_original_queries)
 
     return np.mean(valid_losses)
 
-def create_csv(generated, expected, dbid):
+def create_csv(generated, expected, dbid, original_queries):
 
     #import pdb; pdb.set_trace()
     with open('generated.pkl', 'wb') as f:
@@ -278,10 +283,15 @@ def create_csv(generated, expected, dbid):
       pickle.dump(dbid, f)
 
     generated_strings = [[ids_to_string(id) for id in batch] for batch in generated]
-    expected_strings = [[ids_to_string(id) for id in batch] for batch in expected]
+    expected_strings = original_queries
+    expected = [[[id.item() for id in label if id.item() != 0] for label in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
+<<<<<<< HEAD
     with open('outputs.csv', 'a', newline='') as csv_file:
+=======
+    with open(os.path.join(args.log_dir, 'outputs.csv'), 'w', newline='') as csv_file:
+>>>>>>> 2ef2eab86907dae516244cf615b12d5b9bb1ee3e
         writer = csv.writer(csv_file)
         writer.writerow(["new", "epoch", "over", "here", "."])
         for (gen, exp, dbid, gen_s, exp_s) in zip(generated, expected, dbid, generated_strings, expected_strings):
