@@ -149,6 +149,8 @@ def train(args):
                     args.batch_size, args.effective_batch_size, args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
             print(f'Batch {i}/{len(train_dataloader)} loss: {train_loss}')
+            if i > 10:
+                break
         
         epoch_loss = sum_loss/i
         print(f"Epoch {epoch} loss: {epoch_loss}")
@@ -162,6 +164,8 @@ def train(args):
 
         if early_stopping(valid_loss):
             break
+        if epoch >= 0:
+            break
 
 
     
@@ -171,8 +175,8 @@ def train(args):
         os.mkdir(args.log_dir)
     if not os.path.exists(checkpoint_dir):
         os.mkdir(checkpoint_dir)
-    torch.save(bert.state_dict(), './checkpoints/bert-state-dict.pth')
-    torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict.pth')
+    torch.save(bert.state_dict(), os.path.join(checkpoint_dir, 'bert-state-dict.pth'))
+    torch.save(decoder.state_dict(), os.path.join(checkpoint_dir, 'decoder-state-dict.pth'))
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
