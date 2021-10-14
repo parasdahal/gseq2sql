@@ -19,8 +19,11 @@ class EarlyStopping():
       elif self.best_loss - val_loss > self.min_delta:
           self.best_loss = val_loss
       elif self.best_loss - val_loss < self.min_delta:
+          if self.counter == 0:
+              self.just_started = True
+          else:
+              self.just_started = False
           self.counter += 1
-          self.just_started = True
           print(f"INFO: Early stopping counter {self.counter} of {self.patience}")
           if self.counter >= self.patience:
               print('INFO: Early stopping')
@@ -79,7 +82,7 @@ def parse_args():
                       type=str,
                       help='Path to the spider dataset')
   parser.add_argument('--use_schema',
-                      default=False,
+                      default=True,
                       type=t_or_f,
                       help='Add schema information to the input questions.')
   # Optimizer hyperparameters
@@ -100,7 +103,7 @@ def parse_args():
                       default=20,
                       type=int,
                       help='Max number of epochs')
-  parser.add_argument('--seed', default=42, type=int, help='Random seed')
+  parser.add_argument('--seed', default=84, type=int, help='Random seed')
   parser.add_argument('--limit_train_batches',
                       default=1.0,
                       type=float,
