@@ -35,9 +35,9 @@ def summarize_query_results(csv_fname):
     sim_score = eval_query_similarity(csv_fname)
     print(f'Average Levenshtein similarity: {sim_score}')
 
-    execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
-    print(f'Execution success: {execution_success}')
-    print(f'Execution accuracy: {execution_accuracy}')
+    # execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
+    # print(f'Execution success: {execution_success}')
+    # print(f'Execution accuracy: {execution_accuracy}')
 
     return exact_match_acc, set_match_acc, sim_score
 
