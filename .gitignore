@@ -1,6 +1,7 @@
 datasets/spider
 data/spider
 checkpoints/
+checkpoints-kevin/
 expected.pkl
 generated.pkl
 dbid.pkl

@@ -9,7 +9,8 @@ class Attention(nn.Module):
     super(Attention, self).__init__()
     self.attn = nn.Linear(hidden_size * 2, max_length)
     self.attn_combine = nn.Linear(hidden_size * 2, hidden_size)
-    
+    self.heatmaps = True
+
   def forward(self, embedded, hidden, encoder_outputs):
     
     attn_weights = F.softmax(

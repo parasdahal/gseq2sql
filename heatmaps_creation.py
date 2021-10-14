@@ -9,8 +9,9 @@ from datasets.dataset import create_splits
 from torch.utils.data import DataLoader, RandomSampler
 from utils import parse_args, EarlyStopping, plot_losses
 from eval import ids_to_string
-import os
+import os, Levenshtein
 from att_visualization import generate_heatmap
+from transformers import BertTokenizer
 
 SOS_TOKEN = 101
 EOS_TOKEN = 102
@@ -19,18 +20,43 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
                bert_optimizer, decoder_optimizer, batch_size, effective_batch_size,
                teacher_forcing, device, verbose=False):
     
-    
+
+    bert.load_state_dict(torch.load("checkpoints-kevin/bert-state-dict.pth", map_location='cpu'))
+    bert.eval()
+
+    decoder.load_state_dict(torch.load("checkpoints-kevin/decoder-state-dict.pth", map_location='cpu'))
+    decoder.eval()
+
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    bert.eval()
+    decoder.eval()
+
+    import pdb; pdb.set_trace()
+    with open("checkpoints-kevin/outputs-kevin.csv", 'r') as csvfile:
+        csvreader = csv.reader(csvfile)
+        rows = []
+        for row in csvreader:
+            rows.append(row)
+    import pdb; pdb.set_trace()
+
+    targets = []; generated=[]; targets_str=[]; generated_str=[]
+    for row in rows:
+        pred = row[0]
+        gt = row[1]
+        pred_str = row[3]
+        gt_str = row[4]
+        targets.append(gt)
+        generated.append(pred)
+        targets_str.append(gt_str)
+        generated_str.append(pred_str)
+
+
     bert_outputs, bert_all = bert(input, attention_masks)
     batch_size_, hidden_dim = bert_outputs.size()
 
-    accum_iter = effective_batch_size / batch_size
-    #target_size = target.size(0)
-    
-    batch_outputs = []; batch_expected = []
-    
-    loss = 0
-    # Iterate over samples in the batch.
-    for batch_i in range(batch_size_):
+    import pdb; pdb.set_trace()
+    for batch_i in range(4):
         # Size = [1, 1]
         decoder_input = torch.tensor([[SOS_TOKEN]], device=device)
         # Size = [1, 1, hidden_dim]
@@ -46,33 +72,34 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
             target_size = target[batch_i].size(0)
         
         # Generate token and compute loss in each timestep.
-        loss_ = 0; gen_output = []; expected_output= []
-        for target_i in range(target_size):
-            decoder_output, decoder_hidden, attn_weights = decoder(
-                decoder_input, decoder_hidden, bert_all[batch_i])
 
-            # todo: bert, decoder: eval()
-            for i in range(len(input)):
-                generate_heatmap(input, attn_weights, "latex"+str(i)+".tex")
+        myinput = input[batch_i]; mytarget = target[batch_i]
+        try:
+            idx = targets.index(mytarget)
+        except:
+            import pdb; pdb.set_trace()
+        mygeneratedstr = generated_str[idx]; mytargetstr = targets_str[idx]
+        similarity = Levenshtein.distance(mytargetstr, mygeneratedstr)
 
-            expected_target = torch.tensor([target[batch_i][target_i]], device=device)
-            _, vocab_id = decoder_output.topk(1)
-            if not teacher_forcing:
-                decoder_input = vocab_id.squeeze().detach()
-            else:
-                decoder_input = expected_target
-            loss_ += loss_fn(decoder_output, expected_target)
-            
-            gen_output.append(vocab_id.item())
-            expected_output.append(expected_target.item())
-            
-            if decoder_input.item() == EOS_TOKEN:
-                break
-        loss += loss_ / target_size
-        
-        if verbose and batch_i < 5:
-            batch_outputs.append(ids_to_string(gen_output))
-            batch_expected.append(ids_to_string(expected_output))
+        if similarity > 0.5:
+
+
+            for target_i in range(target_size):
+                decoder_output, decoder_hidden, attn_weights = decoder(
+                    decoder_input, decoder_hidden, bert_all[batch_i])
+
+            import pdb; pdb.set_trace()           
+
+            # gt_query, pred_query = ids_to_string(gt_query), ids_to_string(pred_query)
+            # similarity = Levenshtein.distance(gt_query, pred_query)
+
+            generate_heatmap(ids_to_string(myinput), attn_weights[0][0], "latex"+str(batch_i)+".tex")
+
+            continue
+
+
+
+    import sys; sys.exit(0)
     
     # Print generated and expected strings.
     if verbose:
@@ -150,7 +177,7 @@ def train(args):
             input_ids, attention_masks, labels, db_id = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
-            
+
             train_loss = train_step(i, input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, len(train_dataloader), bert_optimizer, decoder_optimizer, 
                     args.batch_size, args.effective_batch_size, args.teacher_forcing, device, args.verbose)

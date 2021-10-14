@@ -4,7 +4,7 @@ import numpy as np
 
 latex_special_token = ["!@#$%^&*()"]
 
-def generate(text_list, attention_list, latex_file, color='red', rescale_value = False):
+def generate_heatmap(text_list, attention_list, latex_file, color='red', rescale_value = False):
 	assert(len(text_list) == len(attention_list))
 	if rescale_value:
 		attention_list = rescale(attention_list)
@@ -60,4 +60,4 @@ On Wednesday, Mr Pence described the country as the "most dangerous and urgent t
 	random.seed(42)
 	random.shuffle(attention)
 	color = 'red'
-	generate(words, attention, "sample.tex", color)
+	generate_heatmap(words, attention, "sample.tex", color)
