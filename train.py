@@ -236,11 +236,12 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
     bert.eval(); decoder.eval()
 
     total_generated = []; total_expected = []; total_dbid = []
+    total_original_queries = []
 
     valid_losses = []
 
     for i, batch in enumerate(valid_dataloader):
-        input_ids, attention_masks, labels, db_id = batch
+        input_ids, attention_masks, labels, db_id, original_queries = batch
         input_ids, attention_masks, labels = input_ids.to(device), \
             attention_masks.to(device), labels.to(device)
         
@@ -248,12 +249,13 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
                 loss_fn, bert, decoder, device)
         print('Batch loss: ', valid_loss)
         total_generated.append(generated); total_expected.append(expected); total_dbid.append(db_id)
+        total_original_queries.append(original_queries)
         valid_losses.append(valid_loss)
-    create_csv(total_generated, total_expected, total_dbid)
+    create_csv(total_generated, total_expected, total_dbid, total_original_queries)
 
     return np.mean(valid_losses)
 
-def create_csv(generated, expected, dbid):
+def create_csv(generated, expected, dbid, original_queries):
 
     #import pdb; pdb.set_trace()
     with open('generated.pkl', 'wb') as f:
@@ -264,7 +266,7 @@ def create_csv(generated, expected, dbid):
       pickle.dump(dbid, f)
 
     generated_strings = [[ids_to_string(id) for id in batch] for batch in generated]
-    expected_strings = [[ids_to_string(id) for id in batch] for batch in expected]
+    expected_strings = [[query for query in queries] for queries in original_queries]
 
     #import pdb; pdb.set_trace()
     with open('outputs.csv', 'w', newline='') as csv_file:

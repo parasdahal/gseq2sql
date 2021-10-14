@@ -13,6 +13,7 @@ class SpiderDataset(Dataset):
     self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     self.dbs = dbs
+    self.original_queries = queries
 
     if schema_file:
       # Read schema information from table.json
@@ -43,7 +44,7 @@ class SpiderDataset(Dataset):
     return len(self.input_ids)
 
   def __getitem__(self, i):
-    return torch.tensor(self.input_ids[i]), torch.tensor(self.att_mask[i]), torch.tensor(self.queries[i]), self.dbs[i]
+    return torch.tensor(self.input_ids[i]), torch.tensor(self.att_mask[i]), torch.tensor(self.queries[i]), self.dbs[i], self.original_queries[i]
 
 def create_dataloader(dataset_path, json_file, batch_size=1):
   dataset = SpiderDataset(dataset_path, json_file)
