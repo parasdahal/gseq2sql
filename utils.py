@@ -11,6 +11,7 @@ class EarlyStopping():
       self.counter = 0
       self.best_loss = None
       self.early_stop = False
+      self.just_started = False
 
   def __call__(self, val_loss):
       if self.best_loss == None:
@@ -19,11 +20,12 @@ class EarlyStopping():
           self.best_loss = val_loss
       elif self.best_loss - val_loss < self.min_delta:
           self.counter += 1
+          self.just_started = True
           print(f"INFO: Early stopping counter {self.counter} of {self.patience}")
           if self.counter >= self.patience:
               print('INFO: Early stopping')
               self.early_stop = True
-      return self.early_stop
+      return self.early_stop, self.just_started
 
 def plot_losses(dir, train_losses, valid_losses):
     if not os.path.exists(dir):

@@ -160,8 +160,15 @@ def train(args):
         valid_losses.append(valid_loss)
         plot_losses(args.log_dir, train_losses, valid_losses)
 
-        if early_stopping(valid_loss):
+        early, just_started = early_stopping(valid_loss)
+        if early:
             break
+        if just_started:
+            print('Lowest loss. Saving the model...')
+            if not os.path.exists('./checkpoints/'):
+                os.mkdir('./checkpoints/')
+            torch.save(bert.state_dict(), './checkpoints/bert-state-dict-lowest.pth')
+            torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict-lowest.pth')            
 
 
     
@@ -267,8 +274,9 @@ def create_csv(generated, expected, dbid):
     expected_strings = [[ids_to_string(id) for id in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
-    with open('outputs.csv', 'w', newline='') as csv_file:
+    with open('outputs.csv', 'a', newline='') as csv_file:
         writer = csv.writer(csv_file)
+        writer.writerow(["new", "epoch", "over", "here", "."])
         for (gen, exp, dbid, gen_s, exp_s) in zip(generated, expected, dbid, generated_strings, expected_strings):
             for (g, e, db, gs, es) in zip(gen, exp, dbid, gen_s, exp_s):
                 writer.writerow([g, e, db, gs, es])
