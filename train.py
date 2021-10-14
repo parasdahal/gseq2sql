@@ -287,11 +287,7 @@ def create_csv(generated, expected, dbid, original_queries):
     expected = [[[id.item() for id in label if id.item() != 0] for label in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
-<<<<<<< HEAD
     with open('outputs.csv', 'a', newline='') as csv_file:
-=======
-    with open(os.path.join(args.log_dir, 'outputs.csv'), 'w', newline='') as csv_file:
->>>>>>> 2ef2eab86907dae516244cf615b12d5b9bb1ee3e
         writer = csv.writer(csv_file)
         writer.writerow(["new", "epoch", "over", "here", "."])
         for (gen, exp, dbid, gen_s, exp_s) in zip(generated, expected, dbid, generated_strings, expected_strings):
