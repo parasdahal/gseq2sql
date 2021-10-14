@@ -248,7 +248,7 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
         valid_loss, generated, expected = valid_step(input_ids, attention_masks, labels, 
                 loss_fn, bert, decoder, device)
         print('Batch loss: ', valid_loss)
-        total_generated.append(generated); total_expected.append(expected); total_dbid.append(db_id)
+        total_generated.append(generated); total_expected.append(labels); total_dbid.append(db_id)
         total_original_queries.append(original_queries)
         valid_losses.append(valid_loss)
     create_csv(total_generated, total_expected, total_dbid, total_original_queries)
@@ -267,6 +267,7 @@ def create_csv(generated, expected, dbid, original_queries):
 
     generated_strings = [[ids_to_string(id) for id in batch] for batch in generated]
     expected_strings = [[query for query in queries] for queries in original_queries]
+    expected = [[[id for id in label if id != 0] for label in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
     with open('outputs.csv', 'w', newline='') as csv_file:

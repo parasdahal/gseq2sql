@@ -11,6 +11,7 @@ import os
 import csv
 import sqlite3
 import sys
+import json
 
 dataset_path = os.path.join(Path(__file__).parent.absolute(), './data/spider')
 # dataset_path = "./datasets/spider"
@@ -20,6 +21,27 @@ tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 schema_info = SchemaInfo(os.path.join(dataset_path, 'tables.json'))
 tokenizer.add_tokens(['[T]', '[C]'])
 tokenizer.add_tokens(schema_info.get_tokens())
+
+def get_query_id_dictionary(json_files, use_schema=False):
+    queries = []
+
+    for json_file in json_files:
+        with open(os.path.join(dataset_path, json_file)) as f:
+            data = json.load(f)
+            for item in data:
+                queries.append(item['query'])
+
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    # Add schema tokens to tokenizer
+    if use_schema:
+        schema_info = SchemaInfo(os.path.join(dataset_path, 'tables.json'))
+        tokenizer.add_tokens(['[T]', '[C]'])
+        tokenizer.add_tokens(schema_info.get_tokens())
+
+    input_ids = tokenizer(queries, truncation=True, padding="max_length", add_special_tokens=True)['input_ids']
+
+    return {str([id for id in input_id if (id != 0 and id != 102)]): query for input_id, query in zip(input_ids, queries)}
 
 
 # Function which summarizes 3 metrics for results
@@ -148,6 +170,9 @@ def eval_set_match_accuracy(csv_fname, split='validation'):
     return avg_set_match_accuracy
 
 def eval_execution_accuracy(csv_fname):
+    original_queries = get_query_id_dictionary(['train_spider.json', 'dev.json'])
+    print('Generated query dictionary')
+
     total = 0
     fails = 0
     accurate = 0
@@ -157,9 +182,10 @@ def eval_execution_accuracy(csv_fname):
         for row in reader:
             total += 1
             db_file = os.path.join(dataset_path, 'database', row[2], f'{row[2]}.sqlite')
+            original_query = original_queries[row[1]]
             con = sqlite3.connect(db_file)
             cur = con.cursor()
-            cur.execute(row[4])
+            cur.execute(original_query)
             target = cur.fetchall()[0]
             try:
                 cur.execute(row[3])
@@ -205,6 +231,8 @@ def save_string_csv(csv_fname):
     df.to_csv('queries_as_strings.csv')
 
 if __name__ == '__main__':
+    # from pprint import pprint
+    # pprint(get_query_id_dictionary(['train_spider.json', 'dev.json']))
     if len(sys.argv) < 1:
         print('Use csv file path as an argument')
     summarize_query_results(sys.argv[1])
