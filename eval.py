@@ -204,3 +204,6 @@ def save_string_csv(csv_fname):
 
 # summarize_query_results('outputs (10).csv')
 # save_string_csv('outputs (10).csv')
+
+if __name__ == '__main__':
+    summarize_query_results("outputs-17.csv")
