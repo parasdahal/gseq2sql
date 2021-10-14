@@ -10,6 +10,7 @@ from torch.nn.utils.rnn import pad_sequence
 import os
 import csv
 import sqlite3
+import sys
 
 dataset_path = os.path.join(Path(__file__).parent.absolute(), './data/spider')
 # dataset_path = "./datasets/spider"
@@ -26,13 +27,15 @@ tokenizer.add_tokens(schema_info.get_tokens())
 # and average Levenshtein similarity
 def summarize_query_results(csv_fname):
     exact_match_acc = eval_exact_match_accuracy(csv_fname)
-    set_match_acc = eval_set_match_accuracy(csv_fname)
-    sim_score = eval_query_similarity(csv_fname)
-    execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
-
     print(f'Exact Match Accuracy: {exact_match_acc}')
+
+    set_match_acc = eval_set_match_accuracy(csv_fname)
     print(f'Exact Set Match Accuracy: {set_match_acc}')
+
+    sim_score = eval_query_similarity(csv_fname)
     print(f'Average Levenshtein similarity: {sim_score}')
+
+    execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
     print(f'Execution success: {execution_success}')
     print(f'Execution accuracy: {execution_accuracy}')
 
@@ -201,6 +204,7 @@ def save_string_csv(csv_fname):
     df = pd.DataFrame(query_strings)
     df.to_csv('queries_as_strings.csv')
 
-
-# summarize_query_results('outputs (10).csv')
-# save_string_csv('outputs (10).csv')
+if __name__ == '__main__':
+    if len(sys.argv) < 1:
+        print('Use csv file path as an argument')
+    summarize_query_results(sys.argv[1])
