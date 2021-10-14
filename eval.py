@@ -154,15 +154,21 @@ def eval_execution_accuracy(csv_fname):
     accurate = 0
 
     for db_id, pred_query, gt_query in zip(db_ids, pred_queries, gt_queries):
-        total += 1
         db_file = os.path.join(dataset_path, 'database', db_id, f'{db_id}.sqlite')
         con = sqlite3.connect(db_file)
-        cur = con.cursor()
-        cur.execute(gt_query)
-        target = cur.fetchall()[0]
+        try:
+            cur = con.cursor()
+            cur.execute(gt_query)
+            result = cur.fetchall()
+            target = result[0] if len(result) >= 1 else None
+            total += 1
+        except:
+            continue
+
         try:
             cur.execute(pred_query)
-            pred = cur.fetchall()[0]
+            result = cur.fetchall()
+            pred = result[0] if len(result) >= 1 else None
             if target == pred:
                 accurate += 1
         except:
