@@ -140,7 +140,7 @@ def train(args):
 
         sum_loss = 0
         for i, batch in enumerate(train_dataloader):
-            input_ids, attention_masks, labels, db_id = batch
+            input_ids, attention_masks, labels, _, _ = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
             
