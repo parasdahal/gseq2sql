@@ -149,8 +149,6 @@ def train(args):
                     args.batch_size, args.effective_batch_size, args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
             print(f'Batch {i}/{len(train_dataloader)} loss: {train_loss}')
-            if i > 10:
-                break
         
         epoch_loss = sum_loss/i
         print(f"Epoch {epoch} loss: {epoch_loss}")
@@ -163,8 +161,6 @@ def train(args):
         plot_losses(args.log_dir, train_losses, valid_losses)
 
         if early_stopping(valid_loss):
-            break
-        if epoch >= 0:
             break
 
 
