@@ -22,27 +22,6 @@ schema_info = SchemaInfo(os.path.join(dataset_path, 'tables.json'))
 tokenizer.add_tokens(['[T]', '[C]'])
 tokenizer.add_tokens(schema_info.get_tokens())
 
-def get_query_id_dictionary(json_files, use_schema=False):
-    queries = []
-
-    for json_file in json_files:
-        with open(os.path.join(dataset_path, json_file)) as f:
-            data = json.load(f)
-            for item in data:
-                queries.append(item['query'])
-
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-    # Add schema tokens to tokenizer
-    if use_schema:
-        schema_info = SchemaInfo(os.path.join(dataset_path, 'tables.json'))
-        tokenizer.add_tokens(['[T]', '[C]'])
-        tokenizer.add_tokens(schema_info.get_tokens())
-
-    input_ids = tokenizer(queries, truncation=True, padding="max_length", add_special_tokens=True)['input_ids']
-
-    return {str([id for id in input_id if (id != 0 and id != 102)]): query for input_id, query in zip(input_ids, queries)}
-
 
 # Function which summarizes 3 metrics for results
 # Prints and returns exact match accuracy, exact set match accuracy
@@ -57,9 +36,9 @@ def summarize_query_results(csv_fname):
     sim_score = eval_query_similarity(csv_fname)
     print(f'Average Levenshtein similarity: {sim_score}')
 
-    # execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
-    # print(f'Execution success: {execution_success}')
-    # print(f'Execution accuracy: {execution_accuracy}')
+    execution_success, execution_accuracy = eval_execution_accuracy(csv_fname)
+    print(f'Execution success: {execution_success}')
+    print(f'Execution accuracy: {execution_accuracy}')
 
     return exact_match_acc, set_match_acc, sim_score
 
@@ -74,7 +53,7 @@ def eval_query_similarity(csv_fname, split='validation'):
             Average Levenshtein distance between all pairs
     """
     # Read predicted and gt queries
-    pred_queries, gt_queries = read_csv(csv_fname)
+    pred_queries, _, gt_queries = read_csv(csv_fname)
 
     # Loop over each instance of the dataset
     similarities = []
@@ -84,7 +63,7 @@ def eval_query_similarity(csv_fname, split='validation'):
         pred_query = pred_queries[i]
 
         # Convert ids to string, calculate levenshtein distance between the pred and gt query
-        gt_query, pred_query = ids_to_string(gt_query), ids_to_string(pred_query)
+        pred_query = ids_to_string(pred_query)
         similarity = Levenshtein.distance(gt_query, pred_query)
 
         similarities.append(similarity)
@@ -105,7 +84,7 @@ def eval_exact_match_accuracy(csv_fname, split='validation'):
             wrt the specified split
     """
     # Read predicted and gt queries
-    pred_queries, gt_queries = read_csv(csv_fname)
+    pred_queries, gt_queries, _ = read_csv(csv_fname)
 
     # N = number of queries in total to evaluate
     N = len(pred_queries)
@@ -148,17 +127,17 @@ def eval_set_match_accuracy(csv_fname, split='validation'):
             wrt the specified split
     """
     # Read predicted and gt queries
-    pred_queries, gt_queries = read_csv(csv_fname)
+    pred_queries, _, original_queries = read_csv(csv_fname)
 
     # Loop over each instance of the dataset
     set_accuracies = []
-    for i in range(len(gt_queries)):
+    for i in range(len(original_queries)):
         # Read gt and predicted query
-        gt_query = gt_queries[i]
+        gt_query = original_queries[i]
         pred_query = pred_queries[i]
 
         # Convert to string, then split and convert to a set
-        gt_query, pred_query = ids_to_string(gt_query), ids_to_string(pred_query)
+        pred_query = ids_to_string(pred_query)
         gt_query, pred_query = set(gt_query.split(' ')), set(pred_query.split(' '))
 
         # Calculate accuracy by (intersection / union) of the two sets
@@ -170,9 +149,6 @@ def eval_set_match_accuracy(csv_fname, split='validation'):
     return avg_set_match_accuracy
 
 def eval_execution_accuracy(csv_fname):
-    original_queries = get_query_id_dictionary(['train_spider.json', 'dev.json'])
-    print('Generated query dictionary')
-
     total = 0
     fails = 0
     accurate = 0
@@ -182,10 +158,9 @@ def eval_execution_accuracy(csv_fname):
         for row in reader:
             total += 1
             db_file = os.path.join(dataset_path, 'database', row[2], f'{row[2]}.sqlite')
-            original_query = original_queries[row[1]]
             con = sqlite3.connect(db_file)
             cur = con.cursor()
-            cur.execute(original_query)
+            cur.execute(row[4])
             target = cur.fetchall()[0]
             try:
                 cur.execute(row[3])
@@ -216,10 +191,13 @@ def read_csv(csv_fname):
     gt_queries = [row.replace('[','').replace(']','').split(', ') for i, row in gt_queries.iteritems()]
     gt_queries = [[int(id) for id in query] for query in gt_queries]
 
-    return pred_queries, gt_queries
+    original_queries = results_csv.iloc[:,4]
+    original_queries = [row for i, row in original_queries.iteritems()]
+
+    return pred_queries, gt_queries, original_queries
 
 def save_string_csv(csv_fname):
-    pred_queries, gt_queries = read_csv(csv_fname)
+    pred_queries, gt_queries, _ = read_csv(csv_fname)
 
     query_strings = []
     for pred_q, gt_q in zip(pred_queries, gt_queries):
