@@ -166,8 +166,11 @@ def train(args):
 
     
     print('Training completed. Saving the model...')
-    if not os.path.exists('./checkpoints/'):
-        os.mkdir('./checkpoints/')
+    checkpoint_dir = os.path.join(args.log_dir, 'checkpoints')
+    if not os.path.exists(args.log_dir):
+        os.mkdir(args.log_dir)
+    if not os.path.exists(checkpoint_dir):
+        os.mkdir(checkpoint_dir)
     torch.save(bert.state_dict(), './checkpoints/bert-state-dict.pth')
     torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict.pth')
 
@@ -270,7 +273,7 @@ def create_csv(generated, expected, dbid, original_queries):
     expected = [[[id for id in label if id != 0] for label in batch] for batch in expected]
 
     #import pdb; pdb.set_trace()
-    with open('outputs.csv', 'w', newline='') as csv_file:
+    with open(os.path.join(args.log_dir, 'outputs.csv'), 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
         for (gen, exp, dbid, gen_s, exp_s) in zip(generated, expected, dbid, generated_strings, expected_strings):
             for (g, e, db, gs, es) in zip(gen, exp, dbid, gen_s, exp_s):
