@@ -4,7 +4,7 @@ Code for DL4NLP project by Paras Dahal, Koen Gommers, Kevin Waller, Danai Xezona
 
 ## Instructions
 
-[Download Spider dataset](https://yale-lily.github.io/spider) and put the data in a `data/spider` directory.
+[Download Spider dataset](https://yale-lily.github.io/spider) and put the data in a `datasets/spider` directory.
 
 Install required packages 
 
