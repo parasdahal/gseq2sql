@@ -18,16 +18,16 @@ EOS_TOKEN = 102
 def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dataset_size,
                bert_optimizer, decoder_optimizer, batch_size, effective_batch_size,
                teacher_forcing, device, verbose=False):
-    
-    
+
+
     bert_outputs, bert_all = bert(input, attention_masks)
     batch_size_, hidden_dim = bert_outputs.size()
 
     accum_iter = effective_batch_size / batch_size
     #target_size = target.size(0)
-    
+
     batch_outputs = []; batch_expected = []
-    
+
     loss = 0
     # Iterate over samples in the batch.
     for batch_i in range(batch_size_):
@@ -37,14 +37,14 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
         h0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
         # c0 = torch.zeros(1, 1, hidden_dim).to(device)
         c0 = bert_outputs[batch_i].unsqueeze(0).unsqueeze(0)
-        
+
         decoder_hidden = (h0, c0)
 
         try:
             target_size = list(target[batch_i]).index(0)
         except:
             target_size = target[batch_i].size(0)
-        
+
         # Generate token and compute loss in each timestep.
         loss_ = 0; gen_output = []; expected_output= []
         for target_i in range(target_size):
@@ -73,7 +73,7 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
         if verbose and batch_i < 5:
             batch_outputs.append(ids_to_string(gen_output))
             batch_expected.append(ids_to_string(expected_output))
-    
+
     # Print generated and expected strings.
     if verbose:
         for gen, exp in zip(batch_outputs,batch_expected):
@@ -92,16 +92,15 @@ def train_step(iter, input, attention_masks, target, loss_fn, bert, decoder, dat
         decoder_optimizer.zero_grad();
 
     return loss.item() / batch_size * accum_iter
-    
 
 def train(args):
-    
+
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.enable = False
-    
+
     if torch.cuda.is_available():
         device = torch.device("cuda")
         print(f'There are {torch.cuda.device_count()} GPU(s) available.')
@@ -109,10 +108,10 @@ def train(args):
     else:
         print('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
-    
+
     # Setup data_loader instances.
     train_dataset, valid_dataset = create_splits(args.dataset_path, ['train_spider.json', 'dev.json'], use_schema=args.use_schema, seed=args.seed)
-    
+
     train_dataloader = DataLoader(train_dataset,
                         sampler=RandomSampler(train_dataset),
                         batch_size=args.batch_size)
@@ -126,16 +125,16 @@ def train(args):
     bert = BertEncoder(args.vocab_size)
     decoder = LSTMDecoder(hidden_size=args.hidden_dim, output_size=args.vocab_size,
                           use_attention=args.use_attention)
-    
+
     bert = bert.to(device)
     decoder = decoder.to(device)
 
     bert_optimizer = Adam(bert.parameters(),lr=args.lr)
     decoder_optimizer = Adam(decoder.parameters(),lr=args.lr)
-    
+
     loss_fn = nn.NLLLoss()
     sum_loss = 0
-    
+
     if(args.teacher_forcing): print('Using teacher forcing for training...')
 
     train_losses, valid_losses = [], []
@@ -150,18 +149,18 @@ def train(args):
             input_ids, attention_masks, labels, _, _ = batch
             input_ids, attention_masks, labels = input_ids.to(device), \
                 attention_masks.to(device), labels.to(device)
-            
+
             train_loss = train_step(i, input_ids, attention_masks, labels, 
                     loss_fn, bert, decoder, len(train_dataloader), bert_optimizer, decoder_optimizer, 
                     args.batch_size, args.effective_batch_size, args.teacher_forcing, device, args.verbose)
             sum_loss += train_loss
             print(f'Batch {i}/{len(train_dataloader)} loss: {train_loss}')
-        
+
         epoch_loss = sum_loss/i
         print(f"Epoch {epoch} loss: {epoch_loss}")
         print("="*80)
 
-        valid_loss = evaluation(bert, decoder, loss_fn, valid_dataloader)
+        valid_loss = evaluation(bert, decoder, loss_fn, valid_dataloader, epoch)
 
         train_losses.append(epoch_loss)
         valid_losses.append(valid_loss)
@@ -172,21 +171,15 @@ def train(args):
             break
         if just_started:
             print('Lowest loss. Saving the model...')
-            if not os.path.exists('./checkpoints/'):
-                os.mkdir('./checkpoints/')
-            torch.save(bert.state_dict(), './checkpoints/bert-state-dict-lowest.pth')
-            torch.save(decoder.state_dict(), './checkpoints/decoder-state-dict-lowest.pth')            
+            checkpoint_dir = os.path.join(args.log_dir, 'checkpoints')
+            if not os.path.exists(args.log_dir):
+                os.mkdir(args.log_dir)
+            if not os.path.exists(checkpoint_dir):
+                os.mkdir(checkpoint_dir)
+            torch.save(bert.state_dict(), os.path.join(checkpoint_dir, 'bert-state-dict.pth'))
+            torch.save(decoder.state_dict(), os.path.join(checkpoint_dir, 'decoder-state-dict.pth'))
 
-
-    
-    print('Training completed. Saving the model...')
-    checkpoint_dir = os.path.join(args.log_dir, 'checkpoints')
-    if not os.path.exists(args.log_dir):
-        os.mkdir(args.log_dir)
-    if not os.path.exists(checkpoint_dir):
-        os.mkdir(checkpoint_dir)
-    torch.save(bert.state_dict(), os.path.join(checkpoint_dir, 'bert-state-dict.pth'))
-    torch.save(decoder.state_dict(), os.path.join(checkpoint_dir, 'decoder-state-dict.pth'))
+    print('Training completed.')
 
 
 def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
@@ -239,7 +232,7 @@ def valid_step(input, attention_masks, target, loss_fn, bert, decoder, device):
     return loss.item() / batch_size, batch_outputs, batch_expected
 
 
-def evaluation(bert, decoder, loss_fn, valid_dataloader):
+def evaluation(bert, decoder, loss_fn, valid_dataloader, epoch):
     
     if torch.cuda.is_available():       
         device = torch.device("cuda")
@@ -268,13 +261,12 @@ def evaluation(bert, decoder, loss_fn, valid_dataloader):
         total_generated.append(generated); total_expected.append(labels); total_dbid.append(db_id)
         total_original_queries.append(original_queries)
         valid_losses.append(valid_loss)
-    create_csv(total_generated, total_expected, total_dbid, total_original_queries)
+    create_csv(total_generated, total_expected, total_dbid, total_original_queries, epoch)
 
     return np.mean(valid_losses)
 
-def create_csv(generated, expected, dbid, original_queries):
+def create_csv(generated, expected, dbid, original_queries, epoch):
 
-    #import pdb; pdb.set_trace()
     with open('generated.pkl', 'wb') as f:
       pickle.dump(generated, f)
     with open('expected.pkl', 'wb') as f:
@@ -286,10 +278,8 @@ def create_csv(generated, expected, dbid, original_queries):
     expected_strings = original_queries
     expected = [[[id.item() for id in label if id.item() != 0] for label in batch] for batch in expected]
 
-    #import pdb; pdb.set_trace()
-    with open('outputs.csv', 'a', newline='') as csv_file:
+    with open(os.path.join(args.log_dir, f'outputs_{epoch}.csv'), 'w', newline='') as csv_file:
         writer = csv.writer(csv_file)
-        writer.writerow(["new", "epoch", "over", "here", "."])
         for (gen, exp, dbid, gen_s, exp_s) in zip(generated, expected, dbid, generated_strings, expected_strings):
             for (g, e, db, gs, es) in zip(gen, exp, dbid, gen_s, exp_s):
                 writer.writerow([g, e, db, gs, es])
