@@ -3,6 +3,9 @@ data/spider
 checkpoints/
 checkpoints-kevin/
 heatmaps_creation.py
+testtt.py
+heatmaps_creation.py
+att_visualization.py
 expected.pkl
 generated.pkl
 dbid.pkl
